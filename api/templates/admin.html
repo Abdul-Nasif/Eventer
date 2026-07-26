@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Vaagdevi MUN</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800">
+    
+    {% raw %}
+    <div id="app" v-cloak class="p-4 md:p-8 space-y-6">
+        
+        <!-- Header Controls -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-2xl border gap-4 shadow-sm">
+            <div>
+                <h1 class="text-xl font-bold text-slate-900">Vaagdevi MUN 2026</h1>
+                <p class="text-xs text-slate-400">Database Engine: Supabase (PostgreSQL)</p>
+            </div>
+            <div class="flex gap-2">
+                <button @click="exportToCSV" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-sm">
+                    <i class="fa-solid fa-file-csv"></i> Export CSV
+                </button>
+                <button @click="logout" class="px-4 py-2 bg-rose-100 text-rose-700 hover:bg-rose-200 text-xs font-semibold rounded-lg">Logout</button>
+            </div>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div class="bg-white p-4 rounded-xl border shadow-sm"><span class="text-[10px] font-bold text-slate-400 uppercase">Total Registers</span><div class="text-xl font-extrabold mt-1">{{ participants.length }}</div></div>
+            <div class="bg-white p-4 rounded-xl border shadow-sm"><span class="text-[10px] font-bold text-slate-400 uppercase">Approved Payments</span><div class="text-xl font-extrabold mt-1 text-emerald-600">{{ participants.filter(p=>p.status === 'Approved').length }}</div></div>
+            <div class="bg-white p-4 rounded-xl border shadow-sm"><span class="text-[10px] font-bold text-slate-400 uppercase">Pending Audits</span><div class="text-xl font-extrabold mt-1 text-amber-500">{{ participants.filter(p=>p.status === 'Pending').length }}</div></div>
+            <div class="bg-white p-4 rounded-xl border shadow-sm"><span class="text-[10px] font-bold text-slate-400 uppercase">Country Assigned</span><div class="text-xl font-extrabold mt-1">{{ participants.filter(p=>p.allocated_country).length }}</div></div>
+            <div class="bg-white p-4 rounded-xl border shadow-sm"><span class="text-[10px] font-bold text-slate-400 uppercase">MLA Assigned</span><div class="text-xl font-extrabold mt-1">{{ participants.filter(p=>p.allocated_mla).length }}</div></div>
+        </div>
+
+        <!-- Query Filtering Bar -->
+        <div class="p-4 bg-white border rounded-xl grid grid-cols-1 md:grid-cols-3 gap-3 text-xs shadow-sm">
+            <input type="text" v-model="filters.search" placeholder="Search by name, ID, college, UTR ID..." class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none">
+            <select v-model="filters.status" class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none">
+                <option value="">All Verification Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+            </select>
+            <select v-model="filters.experience" class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none">
+                <option value="">All Experience Levels</option>
+                <option value="Yes">Experienced</option>
+                <option value="No">No Experience</option>
+            </select>
+        </div>
+
+        <!-- Participant Records Table -->
+        <div class="bg-white rounded-xl border overflow-hidden shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y text-left text-xs">
+                    <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
+                        <tr>
+                            <th class="px-4 py-3">Participant details</th>
+                            <th class="px-4 py-3">Pref 1 & 2 Choices</th>
+                            <th class="px-4 py-3">Payment Receipt (Supabase URL)</th>
+                            <th class="px-4 py-3">Live Allocations</th>
+                            <th class="px-4 py-3 text-center">Audit Status</th>
+                            <th class="px-4 py-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <tr v-for="p in filteredParticipants" :key="p.id" class="hover:bg-slate-50/70">
+                            <td class="px-4 py-4 space-y-0.5">
+                                <div class="font-mono text-blue-700 font-bold">{{ p.registration_id }}</div>
+                                <div class="font-bold text-slate-900 text-sm">{{ p.full_name }} (Age: {{ p.age }})</div>
+                                <div class="text-[10px] text-slate-500">{{ p.email }} | {{ p.contact }}</div>
+                                <div class="text-[11px] font-semibold text-slate-600">{{ p.institution }} ({{ p.year_of_study }})</div>
+                            </td>
+                            <td class="px-4 py-4 text-[11px] space-y-1">
+                                <div>P1: <strong class="text-blue-900">{{ p.pref1_committee }}</strong>
+                                    <span class="text-[10px] text-slate-400 block pl-3">1. {{ formatSub(p.pref1_committee, p.pref1_sub1) }}</span>
+                                    <span class="text-[10px] text-slate-400 block pl-3">2. {{ formatSub(p.pref1_committee, p.pref1_sub2) }}</span>
+                                </div>
+                                <div>P2: <strong class="text-slate-700">{{ p.pref2_committee }}</strong>
+                                    <span class="text-[10px] text-slate-400 block pl-3">1. {{ formatSub(p.pref2_committee, p.pref2_sub1) }}</span>
+                                    <span class="text-[10px] text-slate-400 block pl-3">2. {{ formatSub(p.pref2_committee, p.pref2_sub2) }}</span>
+                                </div>
+                            </td>
+                            <td class="px-4 py-4">
+                                <div class="font-mono text-[10px] font-bold text-slate-600">UTR: {{ p.utr_id }}</div>
+                                <a :href="p.screenshot_path" target="_blank" class="mt-1 inline-flex items-center gap-1 text-blue-600 hover:underline text-[10px] font-semibold">
+                                    <i class="fa-regular fa-image"></i> View Receipt Screenshot
+                                </a>
+                            </td>
+                            <td class="px-4 py-4 space-y-1">
+                                <div class="flex items-center gap-1.5 text-[10px]">
+                                    <span class="text-slate-400">Country:</span>
+                                    <input type="text" v-model="p.allocated_country" @blur="updateAllocation(p)" class="p-1 border border-slate-200 rounded w-24">
+                                </div>
+                                <div class="flex items-center gap-1.5 text-[10px]">
+                                    <span class="text-slate-400">MLA:</span>
+                                    <input type="text" v-model="p.allocated_mla" @blur="updateAllocation(p)" class="p-1 border border-slate-200 rounded w-24">
+                                </div>
+                            </td>
+                            <td class="px-4 py-4 text-center">
+                                <span class="px-2 py-0.5 text-[9px] font-bold rounded-full"
+                                    :class="p.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'">
+                                    {{ p.status }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-4 text-right">
+                                <button v-if="p.status === 'Pending'" @click="approvePayment(p)" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[10px] rounded transition">Approve</button>
+                            </td>
+                        </tr>
+                        <tr v-if="filteredParticipants.length === 0">
+                            <td colspan="6" class="px-4 py-8 text-center text-slate-400 italic">No registrations found matching the specified parameters.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+    {% endraw %}
+
+    <script>
+        const { createApp, ref, reactive, computed, onMounted } = Vue;
+        createApp({
+            setup() {
+                const participants = ref([]);
+                const filters = reactive({ search: '', status: '', experience: '' });
+
+                // pref*_sub1 / pref*_sub2 are jsonb: {continent, countries:[...]} for UNGA
+                // or {zone, mla} for TLA. Render whichever shape applies.
+                const formatSub = (committee, sub) => {
+                    if (!sub) return '—';
+                    if (committee === 'TLA') return `${sub.zone || '—'}: ${sub.mla || '—'}`;
+                    return `${sub.continent || '—'} (${(sub.countries || []).filter(Boolean).join(', ') || '—'})`;
+                };
+
+                const fetchRegistrations = async () => {
+                    try {
+                        const res = await fetch('/api/admin/registrations');
+                        if (res.ok) {
+                            participants.value = await res.json();
+                        } else {
+                            window.location.href = '/admin-login';
+                        }
+                    } catch (e) {
+                        console.error("Database connection failure.");
+                    }
+                };
+
+                const approvePayment = async (p) => {
+                    try {
+                        const res = await fetch(`/api/admin/approve/${p.registration_id}`, { method: 'PUT' });
+                        if (res.ok) {
+                            p.status = 'Approved';
+                        }
+                    } catch (e) {
+                        alert("Could not update approval status.");
+                    }
+                };
+
+                const updateAllocation = async (p) => {
+                    try {
+                        await fetch(`/api/admin/save-allocation/${p.registration_id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                allocated_country: p.allocated_country,
+                                allocated_mla: p.allocated_mla
+                            })
+                        });
+                    } catch (e) {
+                        console.error(e);
+                    }
+                };
+
+                const logout = async () => {
+                    await fetch('/api/admin/logout', { method: 'POST' });
+                    window.location.href = '/admin-login';
+                };
+
+                const filteredParticipants = computed(() => {
+                    return participants.value.filter(p => {
+                        const s = filters.search.toLowerCase();
+                        const matchText = !s || p.full_name.toLowerCase().includes(s) || p.registration_id.toLowerCase().includes(s) || p.institution.toLowerCase().includes(s) || p.utr_id.toLowerCase().includes(s);
+                        const matchStatus = !filters.status || p.status === filters.status;
+                        const matchExp = !filters.experience || p.has_experience === filters.experience;
+                        return matchText && matchStatus && matchExp;
+                    });
+                });
+
+                const exportToCSV = () => {
+                    let csv = 'Registration ID,Full Name,Email,Institution,Pref 1 Comm,Pref 2 Comm,UTR ID,Status\n';
+                    participants.value.forEach(p => {
+                        csv += `"${p.registration_id}","${p.full_name}","${p.email}","${p.institution}","${p.pref1_committee}","${p.pref2_committee}","${p.utr_id}","${p.status}"\n`;
+                    });
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', 'Vaagdevi_MUN_Registrations.csv');
+                    link.click();
+                };
+
+                onMounted(fetchRegistrations);
+
+                return { participants, filters, filteredParticipants, formatSub, approvePayment, updateAllocation, logout, exportToCSV };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
