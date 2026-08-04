@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Vaagdevi MUN</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        
+        /* Premium Frost Glassmorphism Panel */
+        .glass-card {
+            background: rgba(10, 10, 10, 0.65);
+            backdrop-filter: blur(24px) saturate(160%);
+            -webkit-backdrop-filter: blur(24px) saturate(160%);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.7);
+        }
+
+        /* FORCED MONOCHROME DARK INPUT STYLES */
+        input, select {
+            background-color: #121212 !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            transition: all 0.3s ease;
+        }
+        input:focus, select:focus {
+            border-color: rgba(255, 255, 255, 0.3) !important;
+            background-color: #1a1a1a !important;
+        }
+        option {
+            background-color: #121212 !important;
+            color: #ffffff !important;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printable-ticket, #printable-ticket * { visibility: visible; }
+            #printable-ticket { position: fixed; left: 0; top: 0; width: 100%; height: 100%; background: #000; z-index: 9999; }
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #222; border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-black text-zinc-300 min-h-screen flex flex-col antialiased">
+    
+    {% raw %}
+    <div id="app" v-cloak class="p-4 md:p-8 space-y-6 flex-grow">
+        
+        <!-- Header Controls -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center p-6 rounded-2xl gap-4 glass-card">
+            <div>
+                <h1 class="text-xl font-bold text-white font-yapari">Vaagdevi MUN 2K26</h1>
+                <p class="text-xs text-zinc-500">Database Engine: Supabase (PostgreSQL)</p>
+            </div>
+            <div class="flex gap-2">
+                <button @click="exportToCSV" class="px-4 py-2 bg-white text-black text-xs font-bold rounded-lg flex items-center gap-1.5 shadow-sm hover:bg-zinc-200 transition">
+                    <i class="fa-solid fa-file-csv"></i> Export CSV
+                </button>
+                <button @click="logout" class="px-4 py-2 bg-red-950/20 border border-red-500/20 text-red-200 text-xs font-semibold rounded-lg hover:bg-red-900/30 transition">Logout</button>
+            </div>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div class="glass-card p-4 rounded-xl"><span class="text-[10px] font-bold text-zinc-500 uppercase">Total Registers</span><div class="text-xl font-extrabold text-white mt-1">{{ participants.length }}</div></div>
+            <div class="glass-card p-4 rounded-xl"><span class="text-[10px] font-bold text-zinc-500 uppercase">Approved Payments</span><div class="text-xl font-extrabold text-emerald-400 mt-1">{{ participants.filter(p=>p.status === 'Approved').length }}</div></div>
+            <div class="glass-card p-4 rounded-xl"><span class="text-[10px] font-bold text-zinc-500 uppercase">Pending Audits</span><div class="text-xl font-extrabold text-amber-400 mt-1">{{ participants.filter(p=>p.status === 'Pending').length }}</div></div>
+            <div class="glass-card p-4 rounded-xl"><span class="text-[10px] font-bold text-zinc-500 uppercase">Country Assigned</span><div class="text-xl font-extrabold text-white mt-1">{{ participants.filter(p=>p.allocated_country).length }}</div></div>
+            <div class="glass-card p-4 rounded-xl"><span class="text-[10px] font-bold text-zinc-500 uppercase">MLA Assigned</span><div class="text-xl font-extrabold text-white mt-1">{{ participants.filter(p=>p.allocated_mla).length }}</div></div>
+        </div>
+
+        <!-- Query Filtering Bar -->
+        <div class="p-4 rounded-xl grid grid-cols-1 md:grid-cols-4 gap-3 text-xs glass-card">
+            <input type="text" v-model="filters.search" placeholder="Search by name, ID, college, UTR ID..." class="p-2.5 rounded-lg outline-none">
+            
+            <select v-model="filters.status" class="p-2.5 rounded-lg outline-none">
+                <option value="" class="bg-zinc-950">All Verification Statuses</option>
+                <option value="Pending" class="bg-zinc-950">Pending</option>
+                <option value="Approved" class="bg-zinc-950">Approved</option>
+            </select>
+            
+            <select v-model="filters.experience" class="p-2.5 rounded-lg outline-none">
+                <option value="" class="bg-zinc-950">All Experience Levels</option>
+                <option value="Yes" class="bg-zinc-950">Experienced</option>
+                <option value="No" class="bg-zinc-950">No Experience</option>
+            </select>
+
+            <!-- Dynamic Registration Time Sorting Dropdown -->
+            <select v-model="filters.sortBy" class="p-2.5 rounded-lg outline-none">
+                <option value="newest" class="bg-zinc-950">Newest Registrations First</option>
+                <option value="oldest" class="bg-zinc-950">Oldest Registrations First</option>
+            </select>
+        </div>
+
+        <!-- Participant Records Table -->
+        <div class="rounded-xl overflow-hidden glass-card">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-white/5 text-left text-xs">
+                    <thead class="bg-zinc-950 text-zinc-400 font-bold uppercase tracking-wider border-b border-white/5">
+                        <tr>
+                            <th class="px-4 py-3">Participant details</th>
+                            <th class="px-4 py-3">UNGA Choices (1 & 2)</th>
+                            <th class="px-4 py-3">TLA Choices (1 & 2)</th>
+                            <th class="px-4 py-3">Receipt & Photos</th>
+                            <th class="px-4 py-3">Live Allocations</th>
+                            <th class="px-4 py-3 text-center">Audit Status</th>
+                            <th class="px-4 py-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                        <tr v-for="p in filteredParticipants" :key="p.id" class="hover:bg-white/5 transition-all">
+                            <!-- Column 1: Details, Face Photo Thumbnail & Timestamp -->
+                            <td class="px-4 py-4">
+                                <div class="flex items-center gap-3">
+                                    <img :src="p.photo_path" alt="Portrait" class="w-12 h-12 object-cover rounded-full border border-white/10 bg-neutral-950 shadow-sm" onerror="this.src='https://api.dicebear.com/7.x/initials/svg?seed=Delegate'">
+                                    <div class="space-y-0.5">
+                                        <div class="font-mono text-white font-bold">{{ p.registration_id }}</div>
+                                        <div class="font-bold text-white text-sm">{{ p.full_name }} (Age: {{ p.age }})</div>
+                                        <div class="text-[10px] text-zinc-400">{{ p.email }} | {{ p.contact }}</div>
+                                        <div class="text-[11px] font-semibold text-zinc-400">{{ p.institution }} ({{ p.year_of_study }})</div>
+                                        <!-- Captured Time output on the table dashboard -->
+                                        <div class="text-[10px] text-zinc-500 font-semibold pt-1 flex items-center gap-1">
+                                            <i class="fa-regular fa-clock"></i> {{ formatTimestamp(p.registration_time) }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Column 2: UNGA Selections -->
+                            <td class="px-4 py-4 text-[11px] space-y-1.5 text-zinc-300">
+                                <div><strong class="text-white block text-[10px] uppercase">UNGA Preference 1</strong> {{ p.unga1_continent }} ({{ p.unga1_countries?.join(', ') }})</div>
+                                <div><strong class="text-white block text-[10px] uppercase">UNGA Preference 2</strong> {{ p.unga2_continent }} ({{ p.unga2_countries?.join(', ') }})</div>
+                            </td>
+                            <!-- Column 3: TLA Selections -->
+                            <td class="px-4 py-4 text-[11px] space-y-1.5 text-zinc-300">
+                                <div><strong class="text-white block text-[10px] uppercase">TLA Preference 1</strong> {{ p.tla1_zone }} ({{ p.tla1_mla }})</div>
+                                <div><strong class="text-white block text-[10px] uppercase">TLA Preference 2</strong> {{ p.tla2_zone }} ({{ p.tla2_mla }})</div>
+                            </td>
+                            <!-- Column 4: UTR & Portrait Photo Action Links -->
+                            <td class="px-4 py-4 space-y-1.5">
+                                <div class="font-mono text-[10px] font-bold text-white">UTR: {{ p.utr_id }}</div>
+                                <div class="flex flex-col gap-1.5">
+                                    <a :href="p.screenshot_path" target="_blank" class="inline-flex items-center gap-1 text-white hover:underline text-[10px] font-semibold">
+                                        <i class="fa-regular fa-image"></i> View Receipt
+                                    </a>
+                                    <a :href="p.photo_path" target="_blank" class="inline-flex items-center gap-1 text-white hover:underline text-[10px] font-semibold">
+                                        <i class="fa-regular fa-user"></i> View Face Photo
+                                    </a>
+                                    <!-- SECURE IMMEDIATE PHOTO DOWNLOAD ACCESS -->
+                                    <button @click="downloadParticipantPhoto(p.photo_path, 'photo_' + p.registration_id + '.jpg')" class="inline-flex items-center gap-1 text-white hover:underline text-[10px] font-semibold bg-transparent border-0 cursor-pointer text-left outline-none">
+                                        <i class="fa-solid fa-cloud-arrow-down"></i> Download Photo
+                                    </button>
+                                </div>
+                            </td>
+                            <td class="px-4 py-4 space-y-1.5">
+                                <div class="flex items-center gap-1.5 text-[10px]">
+                                    <span class="text-zinc-500">Country:</span>
+                                    <input type="text" v-model="p.allocated_country" @blur="updateAllocation(p)" class="p-1.5 bg-black border border-white/10 rounded w-24 text-white">
+                                </div>
+                                <div class="flex items-center gap-1.5 text-[10px]">
+                                    <span class="text-zinc-500">MLA:</span>
+                                    <input type="text" v-model="p.allocated_mla" @blur="updateAllocation(p)" class="p-1.5 bg-black border border-white/10 rounded w-24 text-white">
+                                </div>
+                            </td>
+                            <td class="px-4 py-4 text-center">
+                                <span class="px-2.5 py-1 text-[9px] font-bold rounded-full"
+                                    :class="p.status === 'Approved' ? 'bg-emerald-950/40 border border-emerald-900/30 text-emerald-400' : 'bg-amber-950/40 border border-amber-900/30 text-amber-400'">
+                                    {{ p.status }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-4 text-right">
+                                <div class="flex flex-col gap-1.5 items-end">
+                                    <button v-if="p.status === 'Pending'" @click="approvePayment(p)" class="px-3 py-1.5 bg-white text-black font-semibold text-[10px] rounded hover:bg-zinc-200 transition">Approve</button>
+                                    <button v-if="p.status === 'Approved'" @click="openPassGenerator(p)" class="px-3 py-1.5 bg-zinc-900 border border-white/10 text-white font-semibold text-[10px] rounded flex items-center gap-1 transition hover:bg-white hover:text-black">
+                                        <i class="fa-solid fa-address-card"></i> Generate E-Pass
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr v-if="filteredParticipants.length === 0">
+                            <td colspan="7" class="px-4 py-8 text-center text-zinc-500 italic">No registrations found.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- E-PASS DYNAMIC MODAL GENERATOR -->
+        <div v-if="showPassModal" class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <div class="bg-zinc-950 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-6 relative border border-white/10 text-white">
+                
+                <!-- Close Button -->
+                <button @click="showPassModal = false" class="absolute top-4 right-4 text-zinc-500 hover:text-white text-lg">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                </button>
+
+                <div class="text-center">
+                    <h3 class="text-base font-bold text-white font-yapari">E-Pass Generated!</h3>
+                    <p class="text-xs text-zinc-500">Save as PDF or print this pass for the delegate.</p>
+                </div>
+
+                <!-- EVENT PASS E-TICKET -->
+                <div id="printable-ticket" class="max-w-sm mx-auto bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white rounded-3xl overflow-hidden shadow-2xl border border-blue-900/40 flex flex-col">
+                    <div class="bg-blue-600 p-4 text-center border-b border-blue-500/30 flex items-center justify-between px-6">
+                        <span class="text-[10px] uppercase tracking-widest font-bold text-white">Delegate Pass</span>
+                        <span class="text-xs font-bold text-white tracking-tight">VAAG MUN 2K26</span>
+                    </div>
+
+                    <div class="p-6 space-y-6 text-left flex flex-col sm:flex-row gap-4 items-center">
+                        <div class="flex-grow space-y-3.5">
+                            <!-- Portrait Photo inside E-Pass Badge -->
+                            <div class="mb-2">
+                                <img :src="activePass.photo_path" alt="Delegate Photo" class="w-20 h-20 object-cover rounded-xl border-2 border-white/10 shadow-md">
+                            </div>
+                            <div>
+                                <span class="text-[9px] uppercase tracking-wider text-slate-400 block font-semibold">Delegate ID</span>
+                                <span class="text-sm font-mono font-bold tracking-wider text-blue-400">{{ activePass.registration_id }}</span>
+                            </div>
+                            <div>
+                                <span class="text-[9px] uppercase tracking-wider text-slate-400 block font-semibold">Name</span>
+                                <span class="text-xs font-bold text-white">{{ activePass.full_name }}</span>
+                            </div>
+                            <div>
+                                <span class="text-[9px] uppercase tracking-wider text-slate-400 block font-semibold">Institution</span>
+                                <span class="text-[10px] font-medium text-slate-200">{{ activePass.institution }}</span>
+                            </div>
+                            <div>
+                                <span class="text-[9px] uppercase tracking-wider text-slate-400 block font-semibold">Allocation Details</span>
+                                <span class="text-[10px] font-bold text-emerald-400">
+                                    Allocated Position: <br/>
+                                    {{ activePass.allocated_country || activePass.allocated_mla || 'Pending Allocation' }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- STABLE BINDING QR COMPONENT -->
+                        <div class="bg-white p-1.5 rounded-2xl flex flex-col items-center justify-center border shrink-0">
+                            <img :src="getVerificationQR(activePass.registration_id)" alt="Verification Pass" class="w-24 h-24 object-contain">
+                            <span class="text-[7px] font-bold text-black uppercase mt-1">Scan to Verify</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950 p-3 text-center border-t border-zinc-800 text-[8px] text-zinc-500">
+                        Presenting this digital/printed pass is required at the entry gates.
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button @click="printPass" class="flex-1 py-2.5 bg-white text-black rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-md hover:bg-zinc-200 transition">
+                        <i class="fa-solid fa-print"></i> Print/Save Pass
+                    </button>
+                    <button @click="showPassModal = false" class="py-2.5 px-4 bg-zinc-900 border border-white/10 text-white rounded-xl text-xs font-semibold hover:bg-white/5 transition">
+                        Close
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+    {% endraw %}
+
+    <script>
+        const { createApp, ref, reactive, computed, onMounted } = Vue;
+        createApp({
+            setup() {
+                const participants = ref([]);
+                
+                // Added sortBy 'newest' default property in state configuration
+                const filters = reactive({ 
+                    search: '', 
+                    status: '', 
+                    experience: '',
+                    sortBy: 'newest' 
+                });
+                
+                const showPassModal = ref(false);
+                const activePass = ref({});
+
+                const fetchRegistrations = async () => {
+                    try {
+                        const res = await fetch('/api/admin/registrations');
+                        if (res.ok) {
+                            participants.value = await res.json();
+                        } else {
+                            window.location.href = '/admin-login';
+                        }
+                    } catch (e) {
+                        console.error("Database connection failure.");
+                    }
+                };
+
+                const approvePayment = async (p) => {
+                    try {
+                        const res = await fetch(`/api/admin/approve/${p.registration_id}`, { method: 'PUT' });
+                        if (res.ok) {
+                            p.status = 'Approved';
+                        }
+                    } catch (e) {
+                        alert("Could not update approval status.");
+                    }
+                };
+
+                const updateAllocation = async (p) => {
+                    try {
+                        await fetch(`/api/admin/save-allocation/${p.registration_id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                allocated_country: p.allocated_country,
+                                allocated_mla: p.allocated_mla
+                            })
+                        });
+                    } catch (e) {
+                        console.error(e);
+                    }
+                };
+
+                const openPassGenerator = (p) => {
+                    activePass.value = p;
+                    showPassModal.value = true;
+                };
+
+                const getVerificationQR = (regId) => {
+                    const baseDomain = window.PUBLIC_DOMAIN || window.location.origin;
+                    const verificationEndpoint = baseDomain + '/verify-ticket/' + regId;
+                    return 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(verificationEndpoint);
+                };
+
+                const printPass = () => {
+                    window.print();
+                };
+
+                // REAL OUTBOUND PORTRAIT PHOTO DOWNLOAD HANDLER (Bypasses CORS restrictions dynamically)
+                const downloadParticipantPhoto = async (photoUrl, filename) => {
+                    try {
+                        const response = await fetch(photoUrl);
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = filename;
+                        
+                        document.body.appendChild(a);
+                        a.click();
+                        
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    } catch (error) {
+                        // Safe fallback context if direct CORS-fetch is disallowed by server policies
+                        window.open(photoUrl, '_blank');
+                    }
+                };
+
+                const logout = async () => {
+                    await fetch('/api/admin/logout', { method: 'POST' });
+                    window.location.href = '/admin-login';
+                };
+
+                // Reformatted to convert values into JavaScript timestamps and execute sorting orders
+                const filteredParticipants = computed(() => {
+                    let results = participants.value.filter(p => {
+                        const s = filters.search.toLowerCase();
+                        const matchText = !s || p.full_name.toLowerCase().includes(s) || p.registration_id.toLowerCase().includes(s) || p.institution.toLowerCase().includes(s) || p.utr_id.toLowerCase().includes(s);
+                        const matchStatus = !filters.status || p.status === filters.status;
+                        const matchExp = !filters.experience || p.has_experience === filters.experience;
+                        return matchText && matchStatus && matchExp;
+                    });
+
+                    // Execute Sorting logic by registration time
+                    results.sort((a, b) => {
+                        const dateA = a.registration_time ? new Date(a.registration_time) : 0;
+                        const dateB = b.registration_time ? new Date(b.registration_time) : 0;
+                        if (filters.sortBy === 'oldest') {
+                            return dateA - dateB;
+                        } else {
+                            return dateB - dateA;
+                        }
+                    });
+
+                    return results;
+                });
+
+                // Formats standard ISO timestamp strings to local human-readable strings
+                const formatTimestamp = (isoString) => {
+                    if (!isoString) return 'No Time Captured';
+                    try {
+                        const date = new Date(isoString);
+                        return date.toLocaleString('en-US', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                        });
+                    } catch (e) {
+                        return isoString;
+                    }
+                };
+
+                const exportToCSV = () => {
+                    let csv = 'Registration ID,Full Name,Email,Institution,Status,Registered At\n';
+                    participants.value.forEach(p => {
+                        csv += `"${p.registration_id}","${p.full_name}","${p.email}","${p.institution}","${p.status}","${formatTimestamp(p.registration_time)}"\n`;
+                    });
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', 'Vaagdevi_MUN_Registrations.csv');
+                    link.click();
+                };
+
+                onMounted(fetchRegistrations);
+
+                return { 
+                    participants, filters, filteredParticipants, showPassModal, activePass,
+                    approvePayment, updateAllocation, openPassGenerator, getVerificationQR, printPass, 
+                    downloadParticipantPhoto, logout, exportToCSV, formatTimestamp 
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
