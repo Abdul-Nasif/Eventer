@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VAAG MUN 2026 - Eventer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        /* FORCES ALL GLOBAL TEXT, BUTTONS AND FORM ELEMENTS TO POPPINS */
+        body, input, select, textarea, button, option { 
+            font-family: 'Poppins', sans-serif !important; 
+        }
+        
+        @font-face {
+            font-family: 'Yapari Bold';
+            src: local('Yapari Bold'), local('Yapari-Bold'), url('/static/fonts/Yapari-Bold.woff2') format('woff2');
+            font-weight: bold;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        /* HEADING FONT REMAINS YAPARI */
+        .font-yapari {
+            font-family: 'Yapari Bold', 'Yapari', 'Syne', 'Impact', sans-serif !important;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+        }
+
+        .glass-card {
+            background: rgba(10, 10, 10, 0.65);
+            backdrop-filter: blur(24px) saturate(160%);
+            -webkit-backdrop-filter: blur(24px) saturate(160%);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.7);
+        }
+
+        /* FORCED MONOCHROME DARK INPUT STYLES */
+        input, textarea {
+            background-color: #121212 !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            transition: all 0.3s ease;
+        }
+        input:focus, textarea:focus {
+            border-color: rgba(255, 255, 255, 0.3) !important;
+            background-color: #1a1a1a !important;
+        }
+
+        /* FORCED MONOCHROME SELECT DROPDOWN OVERRIDES */
+        select {
+            background-color: #121212 !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 1rem center !important;
+            background-size: 1em !important;
+            padding-right: 2.5rem !important;
+            transition: all 0.3s ease;
+        }
+        select:focus {
+            border-color: rgba(255, 255, 255, 0.3) !important;
+            background-color: #1a1a1a !important;
+        }
+        option {
+            background-color: #121212 !important;
+            color: #ffffff !important;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #222; border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-black text-zinc-300 min-h-screen flex flex-col antialiased">
+    
+    <script>
+        window.PUBLIC_DOMAIN = "{{ public_domain }}";
+    </script>
+
+    <!-- HEADER NAVBAR -->
+    <header class="w-full py-4 px-6 md:px-12 sticky top-0 z-40 glass-card flex items-center justify-between border-b border-white/5">
+        <div class="flex items-center space-x-3">
+            <img src="/static/logo.png" alt="Eventer Logo" class="h-8 w-auto object-contain brightness-200" onerror="this.style.display='none'">
+            <div class="h-6 w-px bg-zinc-800"></div>
+            <span class="text-xs font-bold tracking-widest text-zinc-500 uppercase">Eventer</span>
+        </div>
+        <div class="flex items-center space-x-3">
+            <span class="text-xs font-black tracking-widest text-white uppercase font-bold">VAAG MUN 2026</span>
+        </div>
+    </header>
+
+    {% raw %}
+    <div id="app" v-cloak class="flex-grow flex flex-col justify-center py-10 px-4">
+        
+        <div class="w-full max-w-4xl mx-auto glass-card p-6 md:p-10 rounded-3xl animate-fade-in">
+            
+            <!-- 1. HEADER BRANDING -->
+            <div v-if="step <= 4" class="text-center py-4 space-y-2">
+                <div class="flex items-center justify-center gap-4 sm:gap-6 md:gap-8 mb-4">
+                    <img src="/static/sac_logo.png" alt="Left Logo" class="h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 object-contain rounded-full shadow-md border border-white/5 bg-neutral-950 p-1" onerror="handleLeftLogoError(this)">
+                    <img src="/static/mun_logo.png" alt="Logo" class="h-24 w-24 sm:h-28 sm:w-28 md:h-32 md:w-32 object-contain rounded-full shadow-lg border border-white/10 bg-neutral-950 p-1 animate-pulse" onerror="handleMunLogoError(this)">
+                    <img src="/static/saclogo_old.png" alt="Right Logo" class="h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 object-contain rounded-full shadow-md border border-white/5 bg-neutral-950 p-1" onerror="handleRightLogoError(this)">
+                </div>
+                <span class="text-[10px] sm:text-xs text-zinc-400 uppercase font-bold tracking-[0.3em] block">Vaagdevi Colleges Presents</span>
+                <h1 class="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-yapari text-white uppercase leading-none block select-none">VAAG MUN 2026</h1>
+                <p class="text-xs sm:text-sm text-zinc-500 uppercase font-semibold tracking-widest pt-1">Participant Registration Portal</p>
+            </div>
+
+            <!-- STEP 0: REGISTRATION MODE SELECTION -->
+            <div v-if="step === 0" class="py-12 space-y-8 text-center">
+                <h3 class="text-lg font-bold text-white uppercase tracking-wider">Choose Registration Type</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-xl mx-auto">
+                    <!-- Individual -->
+                    <button @click="selectRegType('individual')" class="p-6 rounded-2xl border border-white/10 hover:border-white/30 bg-zinc-900/40 text-center space-y-2 hover:bg-white/5 transition flex flex-col items-center outline-none">
+                        <i class="fa-solid fa-user text-3xl mb-1 text-blue-400"></i>
+                        <span class="text-sm font-bold text-white uppercase">Individual Pass</span>
+                        <span class="text-xs text-zinc-500">₹500 per delegate</span>
+                    </button>
+                    <!-- Group -->
+                    <button @click="selectRegType('group')" class="p-6 rounded-2xl border border-white/10 hover:border-white/30 bg-zinc-900/40 text-center space-y-2 hover:bg-white/5 transition flex flex-col items-center outline-none">
+                        <i class="fa-solid fa-users text-3xl mb-1 text-emerald-400"></i>
+                        <span class="text-sm font-bold text-white uppercase">Group Pass (5 Members)</span>
+                        <span class="text-xs text-zinc-500">₹2250 total (10% Discount Applied)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. TIMELINE STEPPER -->
+            <div v-if="step >= 1 && step <= 4" class="my-6 flex items-center justify-center max-w-md mx-auto px-4">
+                <template v-for="s in [1, 2, 3, 4]" :key="s">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs border shrink-0 transition-all duration-300"
+                         :class="step >= s ? 'bg-white text-black border-white shadow-lg' : 'bg-transparent text-zinc-500 border-zinc-800'">
+                        {{ s }}
+                    </div>
+                    <div v-if="s < 4" class="h-0.5 w-10 sm:w-16 rounded transition-all duration-300 mx-2" :class="step > s ? 'bg-white' : 'bg-zinc-800'"></div>
+                </template>
+            </div>
+
+            <!-- Error Notifications -->
+            <div v-if="errors.length > 0" class="p-4 mb-6 bg-red-955/20 border border-red-500/20 text-red-200 text-xs rounded-xl space-y-1">
+                <p class="font-bold text-red-400">Please correct the following errors:</p>
+                <li v-for="err in errors" :key="err" class="list-none">• {{ err }}</li>
+            </div>
+
+            <!-- STEP 1: Details -->
+            <div v-if="step === 1" class="space-y-6">
+                <!-- Group Member Tabs -->
+                <div v-if="regType === 'group'" class="flex justify-center border-b border-white/10 pb-4 gap-1.5 flex-wrap">
+                    <button v-for="n in 5" :key="n" @click="activeGroupTab = n - 1"
+                            class="px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition outline-none"
+                            :class="activeGroupTab === n - 1 ? 'bg-white text-black border-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-white/5'">
+                        Member {{ n }}
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    <div>
+                        <label class="block font-bold text-zinc-400 uppercase mb-1.5">Full Name *</label>
+                        <input type="text" v-model="getActiveMember().fullName" class="w-full p-3 rounded-xl outline-none placeholder-zinc-700">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-zinc-400 uppercase mb-1.5">Age *</label>
+                        <input type="number" v-model.number="getActiveMember().age" class="w-full p-3 rounded-xl outline-none placeholder-zinc-700">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-zinc-400 uppercase mb-1.5">Institution / College *</label>
+                        <input type="text" v-model="getActiveMember().institution" class="w-full p-3 rounded-xl outline-none placeholder-zinc-700">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-zinc-400 uppercase mb-1.5">Year of Study *</label>
+                        <select v-model="getActiveMember().yearOfStudy" class="w-full p-3 rounded-xl outline-none">
+                            <option value="" disabled class="text-zinc-500">Select Grade / Year</option>
+                            <option value="10th Class">10th Class</option>
+                            <option value="11th Class / Inter 1st Yr">11th Class / Inter 1st Year</option>
+                            <option value="12th Class / Inter 2nd Yr">12th Class / Inter 2nd Year</option>
+                            <option value="1st Year (UG)">1st Year (College)</option>
+                            <option value="2nd Year (UG)">2nd Year (College)</option>
+                            <option value="3rd Year (UG)">3rd Year (College)</option>
+                            <option value="4th Year (UG)">4th Year (College)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-zinc-400 uppercase mb-1.5">Email *</label>
+                        <input type="email" v-model="getActiveMember().email" class="w-full p-3 rounded-xl outline-none placeholder-zinc-700">
+                    </div>
+                    <div class="col-span-1 md:col-span-2">
+                        <label class="block font-bold text-zinc-400 uppercase mb-1.5">Contact Number *</label>
+                        <input type="tel" v-model="getActiveMember().contact" class="w-full p-3 rounded-xl outline-none placeholder-zinc-700">
+                    </div>
+
+                    <!-- Participant Photo Upload Area -->
+                    <div class="col-span-1 md:col-span-2">
+                        <label class="block font-bold text-zinc-400 uppercase mb-1.5">Participant Photo (For E-Ticket / ID Generation) *</label>
+                        <div class="flex items-center gap-4 mt-1.5 p-3 bg-zinc-950 rounded-xl border border-white/5">
+                            <div class="w-12 h-14 bg-zinc-900 border rounded-lg flex items-center justify-center overflow-hidden">
+                                <img v-if="getPhotoPreview()" :src="getPhotoPreview()" class="w-full h-full object-cover">
+                                <i v-else class="fa-solid fa-user-tie text-slate-700"></i>
+                            </div>
+                            <input type="file" @change="onPhotoChange" accept="image/*" class="flex-grow p-1.5 file:mr-4 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-white/10 file:text-zinc-200">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-zinc-900 border border-white/5 rounded-xl text-xs">
+                    <label class="block font-bold text-zinc-400 uppercase mb-2">Previous MUN Experience?</label>
+                    <div class="flex space-x-6">
+                        <label class="inline-flex items-center cursor-pointer text-zinc-300">
+                            <input type="radio" value="Yes" v-model="getActiveMember().hasExperience" class="mr-2"> Yes
+                        </label>
+                        <label class="inline-flex items-center cursor-pointer text-zinc-300">
+                            <input type="radio" value="No" v-model="getActiveMember().hasExperience" class="mr-2"> No
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center pt-2">
+                    <button @click="step = 0" class="px-5 py-2.5 bg-zinc-900 border border-white/5 hover:bg-white/5 text-zinc-355 rounded-xl text-xs font-semibold">Change Type</button>
+                    <button @click="validateStep1" class="px-6 py-3 bg-white text-black font-semibold rounded-xl text-xs flex items-center justify-center gap-1 hover:bg-zinc-200 transition-all shadow-md">
+                        Continue <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 2: Committees & Preferences Selection -->
+            <div v-if="step === 2" class="space-y-6">
+                <!-- Group Member Tabs -->
+                <div v-if="regType === 'group'" class="flex justify-center border-b border-white/10 pb-4 gap-1.5 flex-wrap">
+                    <button v-for="n in 5" :key="n" @click="activeGroupTab = n - 1"
+                            class="px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition outline-none"
+                            :class="activeGroupTab === n - 1 ? 'bg-white text-black border-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-white/5'">
+                        Member {{ n }}
+                    </button>
+                </div>
+
+                <!-- MAIN PREFERENCE 1 COMMITTEE SELECTOR -->
+                <div class="p-4 bg-zinc-900/60 rounded-2xl border border-white/10 space-y-4 text-xs animate-fade-in">
+                    <span class="font-bold text-zinc-350">Preference 1 — Choose Committee</span>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button type="button" @click="setPref1Committee('UNGA')"
+                                class="px-4 py-3 rounded-xl border font-bold transition-all text-xs outline-none"
+                                :class="getActiveMember().pref1.committee === 'UNGA' ? 'bg-white border-white text-black' : 'bg-transparent border-zinc-800 text-zinc-400 hover:bg-white/5'">
+                            UNGA
+                        </button>
+                        <button type="button" @click="setPref1Committee('TLA')"
+                                class="px-4 py-3 rounded-xl border font-bold transition-all text-xs outline-none"
+                                :class="getActiveMember().pref1.committee === 'TLA' ? 'bg-white border-white text-black' : 'bg-transparent border-zinc-800 text-zinc-400 hover:bg-white/5'">
+                            TLA
+                        </button>
+                    </div>
+                    <p v-if="getActiveMember().pref1.committee" class="text-[11px] text-zinc-500">
+                        Preference 2 is automatically set to <strong class="text-zinc-300">{{ getActiveMember().pref2.committee }}</strong>, since every delegate is considered for both committees.
+                    </p>
+                </div>
+
+                <!-- DYNAMIC PREFERENCE RENDER BLOCKS -->
+                <div v-if="getActiveMember().pref1.committee" class="grid grid-cols-1 gap-4">
+                    <div v-for="entry in [{ main: 1, pref: getActiveMember().pref1 }, { main: 2, pref: getActiveMember().pref2 }]" :key="entry.main"
+                         class="p-4 bg-zinc-900/60 rounded-2xl border border-white/10 space-y-3 text-xs">
+                        <span class="font-bold text-white uppercase tracking-wider">Preference {{ entry.main }}: {{ entry.pref.committee }}</span>
+
+                        <!-- UNGA Layout (Continent + 3 textboxes) -->
+                        <template v-if="entry.pref.committee === 'UNGA'">
+                            <div v-for="subIdx in [1, 2]" :key="subIdx" class="p-3 bg-zinc-950 rounded-xl border border-white/5 space-y-2.5">
+                                <span class="font-semibold text-zinc-450">Sub-Preference {{ subIdx }}</span>
+                                <div>
+                                    <label class="block mb-1 font-semibold text-zinc-500">Preferred Continent</label>
+                                    <select v-model="entry.pref['sub'+subIdx].continent"
+                                            @change="resetCountries(entry.pref['sub'+subIdx])"
+                                            class="w-full p-3 rounded-xl outline-none">
+                                        <option value="" disabled>-- Choose Continent --</option>
+                                        <option v-for="c in continents" :key="c" :value="c">{{ c }}</option>
+                                    </select>
+                                </div>
+                                <div v-if="entry.pref['sub'+subIdx].continent" class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                    <input v-for="n in [0, 1, 2]" :key="n" type="text"
+                                           v-model="entry.pref['sub'+subIdx].countries[n]"
+                                           :placeholder="'Country ' + (n + 1)"
+                                           class="w-full p-3 text-zinc-200 rounded-xl outline-none">
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- TLA Layout (Zone + 1 MLA textbox) -->
+                        <template v-else>
+                            <div v-for="subIdx in [1, 2]" :key="subIdx" class="p-3 bg-zinc-950 rounded-xl border border-white/5 space-y-2.5">
+                                <span class="font-semibold text-zinc-450">Sub-Preference {{ subIdx }}</span>
+                                <div>
+                                    <label class="block mb-1 font-semibold text-zinc-500">Choose Zone</label>
+                                    <select v-model="entry.pref['sub'+subIdx].zone"
+                                            @change="entry.pref['sub'+subIdx].mla = ''"
+                                            class="w-full p-3 rounded-xl outline-none">
+                                        <option value="" disabled>-- Select Zone --</option>
+                                        <option v-for="z in tlaZonesList" :key="z" :value="z">{{ z }}</option>
+                                    </select>
+                                </div>
+                                <div v-if="entry.pref['sub'+subIdx].zone">
+                                    <label class="block mb-1 font-semibold text-zinc-500">MLA Constituency Name</label>
+                                    <input type="text" v-model="entry.pref['sub'+subIdx].mla"
+                                           placeholder="Enter MLA constituency name"
+                                           class="w-full p-3 text-zinc-200 rounded-xl outline-none">
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="flex justify-between">
+                    <button @click="step = 1" class="px-5 py-2.5 bg-zinc-900 border border-white/5 hover:bg-white/5 text-zinc-355 rounded-xl text-xs font-semibold">Back</button>
+                    <button @click="validateStep2" class="px-5 py-2.5 bg-white hover:bg-zinc-200 text-black rounded-xl text-xs font-semibold shadow-md">Continue</button>
+                </div>
+            </div>
+
+            <!-- STEP 3: Payment Screen -->
+            <div v-if="step === 3" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center bg-zinc-900/40 border border-white/5 p-6 rounded-2xl text-xs">
+                    <div class="flex flex-col items-center text-center space-y-3">
+                        <div class="bg-white p-3 border border-zinc-800 rounded-xl shadow-lg">
+                            <img src="/static/bank_qr.png" alt="Bank Payment QR" class="w-40 h-40 object-contain mx-auto">
+                        </div>
+                        <p class="font-semibold text-zinc-300">
+                            Scan to pay fee: 
+                            <strong class="text-white text-sm" v-if="regType === 'individual'">₹500</strong>
+                            <strong class="text-emerald-400 text-sm" v-else>₹2250 (10% Discount Applied!)</strong>
+                        </p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block font-semibold mb-1.5 text-zinc-400">Transaction / UTR ID *</label>
+                            <input type="text" v-model="form.utrId" class="w-full p-3 rounded-xl outline-none placeholder-zinc-700">
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1.5 text-zinc-400">Payment Receipt / Screenshot *</label>
+                            <input type="file" @change="onFileChange" class="w-full p-2 bg-zinc-900 border border-white/10 text-zinc-200 rounded-xl file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-white/10 file:text-zinc-200 hover:file:bg-white/20">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between">
+                    <button @click="step = 2" class="px-5 py-2.5 bg-zinc-900 border border-white/5 hover:bg-white/5 text-zinc-355 rounded-xl text-xs font-semibold">Back</button>
+                    <button @click="validateStep3" class="px-5 py-2.5 bg-white hover:bg-zinc-200 text-black rounded-xl text-xs font-semibold">Continue</button>
+                </div>
+            </div>
+
+            <!-- STEP 4: Review and Submit -->
+            <div v-if="step === 4" class="space-y-6 text-xs animate-fade-in">
+                
+                <!-- Individual Review -->
+                <div v-if="regType === 'individual'" class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-900/50 border border-white/5 p-5 rounded-xl space-y-2">
+                    <div class="col-span-1 md:col-span-2 font-bold text-white border-b border-white/5 pb-1">Participant Details</div>
+                    <div><span class="text-zinc-500">Name:</span> <strong class="text-white">{{ form.fullName }}</strong></div>
+                    <div><span class="text-zinc-500">Institution:</span> <strong class="text-white">{{ form.institution }} ({{ form.yearOfStudy }})</strong></div>
+                    <div><span class="text-zinc-500">Contact:</span> <strong class="text-white">{{ form.contact }}</strong></div>
+                    <div><span class="text-zinc-500">UTR Reference ID:</span> <strong class="text-white font-mono">{{ form.utrId }}</strong></div>
+
+                    <template v-if="form.pref1.committee === 'UNGA'">
+                        <div class="col-span-1 md:col-span-2 font-bold text-white border-b border-white/5 pt-2 pb-1">UNGA Preferences (Pref 1)</div>
+                        <div><span class="text-zinc-500">UNGA Sub 1:</span> <strong class="text-zinc-300">{{ form.pref1.sub1.continent }} ({{ form.pref1.sub1.countries.filter(c => c).join(', ') }})</strong></div>
+                        <div><span class="text-zinc-500">UNGA Sub 2:</span> <strong class="text-zinc-300">{{ form.pref1.sub2.continent }} ({{ form.pref1.sub2.countries.filter(c => c).join(', ') }})</strong></div>
+                        
+                        <div class="col-span-1 md:col-span-2 font-bold text-white border-b border-white/5 pt-2 pb-1">TLA Preferences (Pref 2)</div>
+                        <div><span class="text-zinc-500">TLA Sub 1:</span> <strong class="text-zinc-300">{{ form.pref2.sub1.zone }} ({{ form.pref2.sub1.mla }})</strong></div>
+                        <div><span class="text-zinc-500">TLA Sub 2:</span> <strong class="text-zinc-300">{{ form.pref2.sub2.zone }} ({{ form.pref2.sub2.mla }})</strong></div>
+                    </template>
+                    <template v-else>
+                        <div class="col-span-1 md:col-span-2 font-bold text-white border-b border-white/5 pt-2 pb-1">TLA Preferences (Pref 1)</div>
+                        <div><span class="text-zinc-500">TLA Sub 1:</span> <strong class="text-zinc-300">{{ form.pref1.sub1.zone }} ({{ form.pref1.sub1.mla }})</strong></div>
+                        <div><span class="text-zinc-500">TLA Sub 2:</span> <strong class="text-zinc-300">{{ form.pref1.sub2.zone }} ({{ form.pref1.sub2.mla }})</strong></div>
+
+                        <div class="col-span-1 md:col-span-2 font-bold text-white border-b border-white/5 pt-2 pb-1">UNGA Preferences (Pref 2)</div>
+                        <div><span class="text-zinc-500">UNGA Sub 1:</span> <strong class="text-zinc-300">{{ form.pref2.sub1.continent }} ({{ form.pref2.sub1.countries.filter(c => c).join(', ') }})</strong></div>
+                        <div><span class="text-zinc-500">UNGA Sub 2:</span> <strong class="text-zinc-300">{{ form.pref2.sub2.continent }} ({{ form.pref2.sub2.countries.filter(c => c).join(', ') }})</strong></div>
+                    </template>
+                </div>
+
+                <!-- Group Review -->
+                <div v-else class="space-y-4">
+                    <div v-for="(m, index) in form.members" :key="index" class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-900/40 border border-white/5 p-4 rounded-xl">
+                        <div class="col-span-1 md:col-span-2 font-bold text-white border-b border-white/5 pb-1">Member {{ index + 1 }} Details</div>
+                        <div><span class="text-zinc-500">Name:</span> <strong class="text-white">{{ m.fullName }}</strong></div>
+                        <div><span class="text-zinc-500">Institution:</span> <strong class="text-white">{{ m.institution }}</strong></div>
+                        
+                        <template v-if="m.pref1.committee === 'UNGA'">
+                            <div><span class="text-zinc-500">UNGA Sub 1:</span> <strong class="text-zinc-300">{{ m.pref1.sub1.continent }} ({{ m.pref1.sub1.countries.filter(c => c).join(', ') }})</strong></div>
+                            <div><span class="text-zinc-500">TLA Sub 1:</span> <strong class="text-zinc-300">{{ m.pref2.sub1.zone }} ({{ m.pref2.sub1.mla }})</strong></div>
+                        </template>
+                        <template v-else>
+                            <div><span class="text-zinc-500">TLA Sub 1:</span> <strong class="text-zinc-300">{{ m.pref1.sub1.zone }} ({{ m.pref1.sub1.mla }})</strong></div>
+                            <div><span class="text-zinc-500">UNGA Sub 1:</span> <strong class="text-zinc-300">{{ m.pref2.sub1.continent }} ({{ m.pref2.sub1.countries.filter(c => c).join(', ') }})</strong></div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-white/5 border border-white/10 rounded-xl space-y-3">
+                    <label class="flex items-start cursor-pointer text-zinc-300">
+                        <input type="checkbox" v-model="form.certify" class="mr-2 mt-0.5 accent-white"> 
+                        I certify that the details provided are correct.
+                    </label>
+                    <label class="flex items-start cursor-pointer text-zinc-300">
+                        <input type="checkbox" v-model="form.agreeCode" class="mr-2 mt-0.5 accent-white"> 
+                        I agree to follow the code of conduct of Vaagdevi MUN.
+                    </label>
+                </div>
+
+                <div class="flex justify-between">
+                    <button @click="step = 3" class="px-5 py-2.5 bg-zinc-900 border border-white/5 hover:bg-white/5 text-zinc-300 rounded-xl text-xs font-semibold">Back</button>
+                    <button @click="submitData" :disabled="!form.certify || !form.agreeCode || submitting" 
+                            class="px-6 py-3 bg-white hover:bg-zinc-200 text-black rounded-xl text-xs font-semibold disabled:opacity-50 shadow-md">
+                        {{ submitting ? 'Uploading Application...' : 'Submit Application' }}
+                    </button>
+                </div>
+            </div>
+
+            <!-- SUCCESS VIEW -->
+            <div v-if="step === 5" class="text-center py-8 space-y-6 text-zinc-300 animate-fade-in">
+                <div class="w-16 h-16 bg-white/5 text-white rounded-full flex items-center justify-center mx-auto text-3xl border border-white/10 shadow-lg">
+                    <i class="fa-regular fa-clock"></i>
+                </div>
+                
+                <div class="space-y-2">
+                    <h2 class="text-2xl font-extrabold text-white font-yapari">Registration Received!</h2>
+                    <p class="text-sm text-zinc-400 max-w-md mx-auto leading-relaxed">
+                        Your payment is currently being verified. Once approved by the board, your official E-Ticket and pass details will be generated. You will receive the E-Ticket on your registered email shortly.
+                    </p>
+                </div>
+
+                <div class="p-5 glass-input rounded-2xl max-w-md mx-auto space-y-2.5 text-xs text-left">
+                    <div class="flex justify-between border-b border-white/5 pb-2"><span class="text-zinc-500">Pass Type:</span> <strong class="text-white uppercase">{{ regType }} Pass</strong></div>
+                    <div class="flex justify-between border-b border-white/5 pb-2"><span class="text-zinc-500">UTR Reference ID:</span> <strong class="text-zinc-300 font-mono">{{ form.utrId }}</strong></div>
+                    <div class="border-b border-white/5 pb-2">
+                        <span class="text-zinc-500 block mb-1">Generated ID passes:</span>
+                        <div class="text-blue-400 font-mono font-bold tracking-wider leading-relaxed text-center py-2 bg-black rounded-lg">{{ registrationId }}</div>
+                    </div>
+                </div>
+
+                <div class="pt-4">
+                    <button @click="reloadApp" class="px-6 py-2.5 bg-zinc-900 border border-white/5 hover:bg-white/10 text-white text-xs rounded-xl font-bold transition">
+                        Return Home
+                    </button>
+                </div>
+            </div>
+
+            <!-- PROMINENT SAC SUPPORT CONTACT BANNER -->
+            <div v-if="step >= 1 && step <= 4" class="mt-6 p-4 bg-zinc-900/50 border border-white/5 rounded-2xl text-xs text-zinc-400 flex items-start gap-3">
+                <i class="fa-solid fa-circle-info mt-0.5 text-zinc-400 text-sm"></i>
+                <div>
+                    <span class="font-bold text-white">Need Help?</span> If you face any issues during the registration or payment process, please contact us on Instagram at <a href="https://instagram.com/sac_vce" target="_blank" class="underline font-bold text-white">@sac_vce</a> or call/WhatsApp <a href="tel:+919133651540" class="underline font-bold text-white">+91 9133651540</a>.
+                </div>
+            </div>
+
+        </div>
+    </div>
+    {% endraw %}
+
+    <!-- Helper JavaScript Functions to Handle Image Formats Automatically -->
+    <script>
+        function handleMunLogoError(img) {
+            if (img.src.includes('.png')) {
+                img.src = '/static/mun_logo.jpg';
+            } else if (img.src.includes('.jpg')) {
+                img.src = '/static/mun_logo.jpeg';
+            } else {
+                img.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=vaagmun';
+                img.onerror = null;
+            }
+        }
+
+        function handleLeftLogoError(img) {
+            if (img.src.includes('.png')) {
+                img.src = '/static/left_logo.jpg';
+            } else if (img.src.includes('.jpg')) {
+                img.src = '/static/left_logo.jpeg';
+            } else {
+                img.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=leftlogo';
+                img.onerror = null;
+            }
+        }
+
+        function handleRightLogoError(img) {
+            if (img.src.includes('.png')) {
+                img.src = '/static/right_logo.jpg';
+            } else if (img.src.includes('.jpg')) {
+                img.src = '/static/right_logo.jpeg';
+            } else {
+                img.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=rightlogo';
+                img.onerror = null;
+            }
+        }
+    </script>
+
+    <script>
+        const { createApp, ref, reactive } = Vue;
+        createApp({
+            setup() {
+                const step = ref(0); // Starts on step 0: Registration Type selection
+                const errors = ref([]);
+                const submitting = ref(false);
+                const regType = ref('individual');
+                const activeGroupTab = ref(0);
+
+                // File maps for bulk storage
+                const screenshotFile = ref(null);
+                const groupPhotos = ref([null, null, null, null, null]);
+                const groupPhotoPreviews = ref([null, null, null, null, null]);
+
+                const registrationId = ref('');
+                const qrCodeUrl = ref('');
+
+                const committeesList = ['UNGA', 'TLA', 'UNSC', 'WHO', 'UNHRC', 'ECOSOC', 'ICC', 'DISEC'];
+                const continents = ['Europe', 'Asia', 'Africa', 'North America', 'South America'];
+                const tlaZonesList = ['North Telangana', 'South Telangana', 'Central Telangana'];
+
+                const blankSub = () => ({ continent: '', countries: ['', '', ''], zone: '', mla: '' });
+
+                const blankMember = () => ({
+                    fullName: '', age: '', institution: '', yearOfStudy: '', email: '', contact: '', hasExperience: 'No',
+                    unga1: { continent: '', selectedCountries: ['', '', ''] },
+                    unga2: { continent: '', selectedCountries: ['', '', ''] },
+                    tla1: { zone: '', mla: '' },
+                    tla2: { zone: '', mla: '' },
+                    pref1: { 
+                        committee: '', 
+                        sub1: blankSub(),
+                        sub2: blankSub()
+                    },
+                    pref2: { 
+                        committee: '', 
+                        sub1: blankSub(),
+                        sub2: blankSub()
+                    }
+                });
+
+                // Parent Form Object
+                const form = reactive({
+                    // Individual Model Data
+                    fullName: '', age: '', institution: '', yearOfStudy: '', email: '', contact: '', hasExperience: 'No',
+                    unga1: { continent: '', selectedCountries: ['', '', ''] },
+                    unga2: { continent: '', selectedCountries: ['', '', ''] },
+                    tla1: { zone: '', mla: '' },
+                    tla2: { zone: '', mla: '' },
+                    pref1: { 
+                        committee: '', 
+                        sub1: blankSub(),
+                        sub2: blankSub()
+                    },
+                    pref2: { 
+                        committee: '', 
+                        sub1: blankSub(),
+                        sub2: blankSub()
+                    },
+                    
+                    // Group Model Array of 5 Members
+                    members: [blankMember(), blankMember(), blankMember(), blankMember(), blankMember()],
+                    
+                    utrId: '', certify: false, agreeCode: false
+                });
+
+                const selectRegType = (type) => {
+                    regType.value = type;
+                    step.value = 1;
+                };
+
+                const getActiveMember = () => {
+                    if (regType.value === 'individual') return form;
+                    return form.members[activeGroupTab.value];
+                };
+
+                const getPhotoPreview = () => {
+                    if (regType.value === 'individual') return groupPhotoPreviews.value[0];
+                    return groupPhotoPreviews.value[activeGroupTab.value];
+                };
+
+                const onPhotoChange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const idx = regType.value === 'individual' ? 0 : activeGroupTab.value;
+                        groupPhotos.value[idx] = file;
+                        groupPhotoPreviews.value[idx] = URL.createObjectURL(file);
+                    }
+                };
+
+                const onFileChange = (e) => {
+                    screenshotFile.value = e.target.files[0];
+                };
+
+                // Sets the primary preference dynamically and automatically flips preference 2
+                const setPref1Committee = (committee) => {
+                    const active = getActiveMember();
+                    active.pref1.committee = committee;
+                    active.pref2.committee = committee === 'UNGA' ? 'TLA' : 'UNGA';
+                    
+                    // Flush dynamic priority models
+                    active.pref1.sub1 = blankSub();
+                    active.pref1.sub2 = blankSub();
+                    active.pref2.sub1 = blankSub();
+                    active.pref2.sub2 = blankSub();
+                };
+
+                const resetCountries = (subPref) => {
+                    if (subPref) {
+                        subPref.countries = ['', '', ''];
+                    }
+                };
+
+                const syncPreferences = (memberObj) => {
+                    if (memberObj.pref1.committee === 'UNGA') {
+                        // pref1 is UNGA
+                        memberObj.unga1.continent = memberObj.pref1.sub1.continent;
+                        memberObj.unga1.selectedCountries = [...memberObj.pref1.sub1.countries];
+
+                        memberObj.unga2.continent = memberObj.pref1.sub2.continent;
+                        memberObj.unga2.selectedCountries = [...memberObj.pref1.sub2.countries];
+
+                        // pref2 is TLA
+                        memberObj.tla1.zone = memberObj.pref2.sub1.zone;
+                        memberObj.tla1.mla = memberObj.pref2.sub1.mla;
+
+                        memberObj.tla2.zone = memberObj.pref2.sub2.zone;
+                        memberObj.tla2.mla = memberObj.pref2.sub2.mla;
+                    } else if (memberObj.pref1.committee === 'TLA') {
+                        // pref1 is TLA
+                        memberObj.tla1.zone = memberObj.pref1.sub1.zone;
+                        memberObj.tla1.mla = memberObj.pref1.sub1.mla;
+
+                        memberObj.tla2.zone = memberObj.pref1.sub2.zone;
+                        memberObj.tla2.mla = memberObj.pref1.sub2.mla;
+
+                        // pref2 is UNGA
+                        memberObj.unga1.continent = memberObj.pref2.sub1.continent;
+                        memberObj.unga1.selectedCountries = [...memberObj.pref2.sub1.countries];
+
+                        memberObj.unga2.continent = memberObj.pref2.sub2.continent;
+                        memberObj.unga2.selectedCountries = [...memberObj.pref2.sub2.countries];
+                    }
+                };
+
+                const validateStep1 = () => {
+                    errors.value = [];
+                    
+                    if (regType.value === 'individual') {
+                        if (!groupPhotos.value[0]) errors.value.push("Passport size photo is required.");
+                        if (!form.fullName.trim()) errors.value.push("Name is required.");
+                        if (!form.age || form.age < 12) errors.value.push("Please provide a valid age.");
+                        if (!form.institution.trim()) errors.value.push("Institution is required.");
+                        if (!form.yearOfStudy) errors.value.push("Select a year of study.");
+                        if (!form.email || !form.email.includes("@")) errors.value.push("Valid email required.");
+                        if (!form.contact) errors.value.push("Contact is required.");
+                    } else {
+                        // Loop through all 5 members to validate Step 1
+                        for (let i = 0; i < 5; i++) {
+                            const m = form.members[i];
+                            if (!groupPhotos.value[i]) errors.value.push(`Member ${i+1}: Photo is required.`);
+                            if (!m.fullName.trim()) errors.value.push(`Member ${i+1}: Name is required.`);
+                            if (!m.age || m.age < 12) errors.value.push(`Member ${i+1}: Valid age is required.`);
+                            if (!m.institution.trim()) errors.value.push(`Member ${i+1}: Institution is required.`);
+                            if (!m.yearOfStudy) errors.value.push(`Member ${i+1}: Select a year of study.`);
+                            if (!m.email.includes("@")) errors.value.push(`Member ${i+1}: Valid email required.`);
+                            if (!m.contact) errors.value.push(`Member ${i+1}: Contact is required.`);
+                        }
+                    }
+
+                    if (errors.value.length === 0) step.value = 2;
+                };
+
+                const validateMemberPrefs = (m, label) => {
+                    const prefix = regType.value === 'group' ? `Member ${label} ` : '';
+                    if (!m.pref1.committee) {
+                        errors.value.push(`${prefix}Preference 1: Choose a committee.`);
+                        return;
+                    }
+
+                    // Map dynamic model to actual target fields
+                    syncPreferences(m);
+
+                    // Validate Box 1: UNGA Preference 1
+                    if (!m.unga1.continent) errors.value.push(`${prefix}UNGA Preference 1: Choose continent.`);
+                    if (!m.unga1.selectedCountries[0]?.trim() || !m.unga1.selectedCountries[1]?.trim() || !m.unga1.selectedCountries[2]?.trim()) {
+                        errors.value.push(`${prefix}UNGA Preference 1: Type all 3 preferred countries.`);
+                    }
+
+                    // Validate Box 2: UNGA Preference 2
+                    if (!m.unga2.continent) errors.value.push(`${prefix}UNGA Preference 2: Choose continent.`);
+                    if (!m.unga2.selectedCountries[0]?.trim() || !m.unga2.selectedCountries[1]?.trim() || !m.unga2.selectedCountries[2]?.trim()) {
+                        errors.value.push(`${prefix}UNGA Preference 2: Type all 3 preferred countries.`);
+                    }
+
+                    // Validate Box 3: TLA Preference 1
+                    if (!m.tla1.zone) errors.value.push(`${prefix}TLA Preference 1: Choose zone.`);
+                    if (!m.tla1.mla || !m.tla1.mla.trim()) errors.value.push(`${prefix}TLA Preference 1: Type MLA constituency.`);
+
+                    // Validate Box 4: TLA Preference 2
+                    if (!m.tla2.zone) errors.value.push(`${prefix}TLA Preference 2: Choose zone.`);
+                    if (!m.tla2.mla || !m.tla2.mla.trim()) errors.value.push(`${prefix}TLA Preference 2: Type MLA constituency.`);
+                };
+
+                const validateStep2 = () => {
+                    errors.value = [];
+
+                    if (regType.value === 'individual') {
+                        validateMemberPrefs(form, 1);
+                    } else {
+                        // Validate all 5 group members
+                        for (let i = 0; i < 5; i++) {
+                            validateMemberPrefs(form.members[i], i + 1);
+                        }
+                    }
+
+                    if (errors.value.length === 0) step.value = 3;
+                };
+
+                const validateStep3 = () => {
+                    errors.value = [];
+                    if (!form.utrId.trim()) errors.value.push("UTR transaction ID is required.");
+                    if (!screenshotFile.value) errors.value.push("Upload screenshot image.");
+                    if (errors.value.length === 0) step.value = 4;
+                };
+
+                const submitData = async () => {
+                    submitting.value = true;
+                    try {
+                        const formData = new FormData();
+                        formData.append('screenshot', screenshotFile.value);
+                        
+                        const payload = {
+                            regType: regType.value,
+                            utrId: form.utrId,
+                            certify: form.certify,
+                            agreeCode: form.agreeCode
+                        };
+
+                        if (regType.value === 'individual') {
+                            formData.append('photo', groupPhotos.value[0]);
+                            Object.assign(payload, {
+                                fullName: form.fullName,
+                                age: form.age,
+                                institution: form.institution,
+                                yearOfStudy: form.yearOfStudy,
+                                email: form.email,
+                                contact: form.contact,
+                                hasExperience: form.hasExperience,
+                                unga1: form.unga1,
+                                unga2: form.unga2,
+                                tla1: form.tla1,
+                                tla2: form.tla2
+                            });
+                        } else {
+                            for (let i = 0; i < 5; i++) {
+                                formData.append(`photo_${i}`, groupPhotos.value[i]);
+                            }
+                            payload.members = form.members;
+                        }
+
+                        formData.append('data', JSON.stringify(payload));
+
+                        const res = await fetch('/api/register', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                            registrationId.value = data.registrationId;
+                            step.value = 5;
+                        } else {
+                            alert(data.error || "Submission failed.");
+                        }
+                    } catch (err) {
+                        alert("Communication error.");
+                    } finally {
+                        submitting.value = false;
+                    }
+                };
+
+                const reloadApp = () => { window.location.reload(); };
+
+                return {
+                    step, errors, form, continents, tlaZonesList, regType, activeGroupTab,
+                    screenshotFile, groupPhotos, groupPhotoPreviews, submitting, registrationId, qrCodeUrl, 
+                    selectRegType, getActiveMember, getPhotoPreview, onFileChange, onPhotoChange,
+                    setPref1Committee, resetCountries, validateStep1, validateStep2, validateStep3, submitData, reloadApp
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
