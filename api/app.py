@@ -46,8 +46,7 @@ def allowed_file(filename):
 @app.route('/')
 def home():
     public_domain = os.environ.get("PUBLIC_DOMAIN", "http://127.0.0.1:3000")
-    coupon_code = os.environ.get("COUPON_CODE", "VAAG450")
-    return render_template('index.html', public_domain=public_domain, coupon_code=coupon_code)
+    return render_template('index.html', public_domain=public_domain)
 
 @app.route('/admin-login')
 def admin_login_page():
@@ -92,7 +91,7 @@ def register():
         form_data = json.loads(form_data_str)
         reg_type = form_data.get('regType', 'individual')
 
-        # Check if UTR already exists in database
+        # Check if UTR ID already exists in database
         check_utr = supabase.table('registrations').select('id').eq('utr_id', form_data['utrId']).execute()
         if len(check_utr.data) > 0:
             return jsonify({'error': 'This UTR ID has already been registered.'}), 400
@@ -120,10 +119,6 @@ def register():
             next_num = str(count_res.count + 101).zfill(6)
             registration_id = f"VMUN-2026-{next_num}"
 
-            # Dynamic preference order resolution
-            pref1_committee = form_data.get('pref1_committee', 'UNGA')
-            pref2_committee = 'TLA' if pref1_committee == 'UNGA' else 'UNGA'
-
             insert_payload = {
                 "registration_id": registration_id,
                 "full_name": form_data['fullName'],
@@ -143,10 +138,10 @@ def register():
                 "tla2_zone": form_data['tla2']['zone'],
                 "tla2_mla": form_data['tla2']['mla'],
                 
-                "pref1_committee": pref1_committee,
-                "pref1_details": json.dumps(form_data['unga1'] if pref1_committee == 'UNGA' else form_data['tla1']),
-                "pref2_committee": pref2_committee,
-                "pref2_details": json.dumps(form_data['tla1'] if pref1_committee == 'UNGA' else form_data['unga1']),
+                "pref1_committee": "UNGA",
+                "pref1_details": json.dumps(form_data['unga1']),
+                "pref2_committee": "TLA",
+                "pref2_details": json.dumps(form_data['tla1']),
                 
                 "utr_id": form_data['utrId'],
                 "screenshot_path": screenshot_url,
@@ -176,9 +171,6 @@ def register():
                 next_num = str(count_res.count + 101).zfill(6)
                 registration_id = f"VMUN-2026-{next_num}"
 
-                pref1_committee = member.get('pref1_committee', 'UNGA')
-                pref2_committee = 'TLA' if pref1_committee == 'UNGA' else 'UNGA'
-
                 insert_payload = {
                     "registration_id": registration_id,
                     "full_name": member['fullName'],
@@ -198,10 +190,10 @@ def register():
                     "tla2_zone": member['tla2']['zone'],
                     "tla2_mla": member['tla2']['mla'],
                     
-                    "pref1_committee": pref1_committee,
-                    "pref1_details": json.dumps(member['unga1'] if pref1_committee == 'UNGA' else member['tla1']),
-                    "pref2_committee": pref2_committee,
-                    "pref2_details": json.dumps(member['tla1'] if pref1_committee == 'UNGA' else member['unga1']),
+                    "pref1_committee": "UNGA",
+                    "pref1_details": json.dumps(member['unga1']),
+                    "pref2_committee": "TLA",
+                    "pref2_details": json.dumps(member['tla1']),
                     
                     "utr_id": form_data['utrId'],  # Shared transaction id
                     "screenshot_path": screenshot_url, # Shared receipt image
@@ -270,4 +262,3 @@ def save_allocation(reg_id):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 3000)), debug=False)
-app.py
