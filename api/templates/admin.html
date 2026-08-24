@@ -73,9 +73,15 @@
             <div class="glass-card p-4 rounded-xl"><span class="text-[10px] font-bold text-zinc-500 uppercase">MLA Assigned</span><div class="text-xl font-extrabold text-white mt-1">{{ participants.filter(p=>p.allocated_mla).length }}</div></div>
         </div>
 
-        <!-- Query Filtering Bar (Updated to 4-Column Grid) -->
+        <!-- Query Filtering Bar (4-Column Grid) -->
         <div class="p-4 rounded-xl grid grid-cols-1 md:grid-cols-4 gap-3 text-xs glass-card border border-white/5">
-            <input type="text" v-model="filters.search" placeholder="Search by name, ID, college, UTR ID..." class="p-2.5 rounded-lg outline-none">
+            <div class="relative">
+                <input type="text" v-model="filters.search" placeholder="Search by name, ID, college, UTR ID..." class="p-2.5 rounded-lg outline-none w-full pr-8">
+                <!-- Clear Search Input Button -->
+                <button v-if="filters.search" @click="filters.search = ''" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                </button>
+            </div>
             
             <select v-model="filters.status" class="p-2.5 rounded-lg outline-none">
                 <option value="" class="bg-zinc-950">All Verification Statuses</option>
@@ -103,8 +109,8 @@
                     <thead class="bg-zinc-950 text-zinc-400 font-bold uppercase tracking-wider border-b border-white/5">
                         <tr>
                             <th class="px-4 py-3">Participant details</th>
-                            <th class="px-4 py-3">UNGA Choices (1 & 2)</th>
-                            <th class="px-4 py-3">TLA Choices (1 & 2)</th>
+                            <th class="px-4 py-3">Preference 1 Choices</th>
+                            <th class="px-4 py-3">Preference 2 Choices</th>
                             <th class="px-4 py-3">Receipt & Photos</th>
                             <th class="px-4 py-3">Live Allocations</th>
                             <th class="px-4 py-3 text-center">Audit Status</th>
@@ -123,31 +129,69 @@
                                         <div class="text-[10px] text-zinc-400">{{ p.email }} | {{ p.contact }}</div>
                                         <div class="text-[11px] font-semibold text-zinc-400 mb-1">{{ p.institution }} ({{ p.year_of_study }})</div>
                                         
-                                        <!-- GROUP IDENTIFICATION INDICATOR -->
-                                        <div v-if="p.group_id" class="inline-block mt-1">
-                                            <span class="px-2 py-0.5 text-[9px] font-bold bg-emerald-950/20 border border-emerald-900/30 rounded-md text-emerald-400">
-                                                <i class="fa-solid fa-users"></i> Linked Group: {{ p.group_id }}
-                                            </span>
+                                        <!-- GROUP IDENTIFICATION BADGES -->
+                                        <div v-if="p.group_id" class="flex flex-col gap-1 mt-1.5">
+                                            <div class="flex items-center gap-1">
+                                                <span class="px-2 py-0.5 text-[9px] font-bold bg-emerald-950/20 border border-emerald-900/30 rounded-md text-emerald-400">
+                                                    <i class="fa-solid fa-users"></i> {{ p.group_id }}
+                                                </span>
+                                                <button @click="filterByGroupId(p.group_id)" class="px-1.5 py-0.5 text-[9px] font-bold bg-blue-950/20 border border-blue-900/30 rounded-md text-blue-400 hover:bg-blue-600 hover:text-white transition outline-none">
+                                                    <i class="fa-solid fa-filter"></i> Filter
+                                                </button>
+                                            </div>
+                                            <!-- GROUP INSPECTION ACTION -->
+                                            <button @click="inspectGroup(p.group_id)" class="w-max px-2 py-0.5 text-[9px] font-bold bg-zinc-950 border border-white/10 rounded-md text-zinc-300 hover:bg-white hover:text-black transition outline-none">
+                                                <i class="fa-solid fa-expand"></i> View Group Details
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
                             </td>
-                            <!-- Column 2: UNGA Selections -->
-                            <td class="px-4 py-4 text-[11px] space-y-1.5 text-zinc-300">
-                                <div class="font-bold text-white uppercase text-[10px] mb-0.5">{{ p.pref1_committee }}</div>
-                                <div class="leading-normal">{{ formatDetails(p.pref1_details) }}</div>
+                            
+                            <!-- Column 2: Preference 1 Details -->
+                            <td class="px-4 py-4 text-[11px] space-y-2 text-zinc-300">
+                                <template v-if="p.pref1_committee === 'UNGA'">
+                                    <div class="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-950/40 border border-blue-900/30 text-blue-400 uppercase tracking-wider mb-1">UNGA Pass (Pref 1)</div>
+                                    <div class="space-y-1">
+                                        <div><span class="text-zinc-500 font-semibold">Priority 1:</span> {{ p.unga1_continent }} <span class="text-zinc-400" v-if="p.unga1_countries?.length">({{ p.unga1_countries.join(', ') }})</span></div>
+                                        <div class="pt-1 border-t border-white/5"><span class="text-zinc-500 font-semibold">Priority 2:</span> {{ p.unga2_continent }} <span class="text-zinc-400" v-if="p.unga2_countries?.length">({{ p.unga2_countries.join(', ') }})</span></div>
+                                    </div>
+                                </template>
+                                <template v-else-if="p.pref1_committee === 'TLA'">
+                                    <div class="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-950/40 border border-emerald-900/30 text-emerald-400 uppercase tracking-wider mb-1">TLA Pass (Pref 1)</div>
+                                    <div class="space-y-1">
+                                        <div><span class="text-zinc-500 font-semibold">Priority 1:</span> {{ p.tla1_zone }} <span class="text-zinc-400" v-if="p.tla1_mla">({{ p.tla1_mla }})</span></div>
+                                        <div class="pt-1 border-t border-white/5"><span class="text-zinc-500 font-semibold">Priority 2:</span> {{ p.tla2_zone }} <span class="text-zinc-400" v-if="p.tla2_mla">({{ p.tla2_mla }})</span></div>
+                                    </div>
+                                </template>
                             </td>
-                            <!-- Column 3: TLA Selections -->
-                            <td class="px-4 py-4 text-[11px] space-y-1.5 text-zinc-300">
-                                <div class="font-bold text-white uppercase text-[10px] mb-0.5">{{ p.pref2_committee }}</div>
-                                <div class="leading-normal">{{ formatDetails(p.pref2_details) }}</div>
+                            
+                            <!-- Column 3: Preference 2 Details -->
+                            <td class="px-4 py-4 text-[11px] space-y-2 text-zinc-300">
+                                <template v-if="p.pref1_committee === 'UNGA'">
+                                    <div class="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-950/40 border border-emerald-900/30 text-emerald-400 uppercase tracking-wider mb-1">TLA Pass (Pref 2)</div>
+                                    <div class="space-y-1">
+                                        <div><span class="text-zinc-500 font-semibold">Priority 1:</span> {{ p.tla1_zone }} <span class="text-zinc-400" v-if="p.tla1_mla">({{ p.tla1_mla }})</span></div>
+                                        <div class="pt-1 border-t border-white/5"><span class="text-zinc-500 font-semibold">Priority 2:</span> {{ p.tla2_zone }} <span class="text-zinc-400" v-if="p.tla2_mla">({{ p.tla2_mla }})</span></div>
+                                    </div>
+                                </template>
+                                <template v-else-if="p.pref1_committee === 'TLA'">
+                                    <div class="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-950/40 border border-blue-900/30 text-blue-400 uppercase tracking-wider mb-1">UNGA Pass (Pref 2)</div>
+                                    <div class="space-y-1">
+                                        <div><span class="text-zinc-500 font-semibold">Priority 1:</span> {{ p.unga1_continent }} <span class="text-zinc-400" v-if="p.unga1_countries?.length">({{ p.unga1_countries.join(', ') }})</span></div>
+                                        <div class="pt-1 border-t border-white/5"><span class="text-zinc-500 font-semibold">Priority 2:</span> {{ p.unga2_continent }} <span class="text-zinc-400" v-if="p.unga2_countries?.length">({{ p.unga2_countries.join(', ') }})</span></div>
+                                    </div>
+                                </template>
                             </td>
+
                             <!-- Column 4: UTR & Portrait Photo Action Links -->
                             <td class="px-4 py-4 space-y-1.5">
                                 <div class="font-mono text-[10px] font-bold text-white">UTR: {{ p.utr_id }}</div>
                                 <div class="flex flex-col gap-1.5">
                                     <a :href="p.screenshot_path" target="_blank" class="inline-flex items-center gap-1 text-blue-600 hover:underline text-[10px] font-semibold">
-                                        <i class="fa-regular fa-image"></i> View Receipt
+                                        <i class="fa-regular fa-image"></i> 
+                                        <span v-if="p.group_id">View Shared Receipt</span>
+                                        <span v-else>View Receipt</span>
                                     </a>
                                     <a :href="p.photo_path" target="_blank" class="inline-flex items-center gap-1 text-indigo-400 hover:underline text-[10px] font-semibold">
                                         <i class="fa-regular fa-user"></i> View Face Photo
@@ -187,6 +231,68 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- 3. NEW: GROUP INSPECTION POPUP PANEL (DISPLAYING ALL 4 DETAILED PREFERENCES) -->
+        <div v-if="showGroupModal" class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <div class="bg-zinc-950 rounded-3xl p-6 max-w-5xl w-full shadow-2xl space-y-6 relative border border-white/10 text-white animate-fade-in">
+                
+                <!-- Close Button -->
+                <button @click="showGroupModal = false" class="absolute top-4 right-4 text-zinc-500 hover:text-white text-lg outline-none">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                </button>
+
+                <div class="border-b border-white/5 pb-3">
+                    <h3 class="text-lg font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-users text-emerald-400"></i> Group Details Inspector: {{ activeGroupId }}
+                    </h3>
+                    <p class="text-xs text-zinc-500">Displaying exact real-time profile and preference records for all 5 delegates in this group batch.</p>
+                </div>
+
+                <!-- 5 Member Horizontal/Grid Cards Layout -->
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 overflow-y-auto max-h-[60vh] pr-2">
+                    <div v-for="(m, i) in activeGroupMembers" :key="m.id" class="p-4 bg-zinc-900 border border-white/5 rounded-2xl flex flex-col items-center text-center space-y-4 relative">
+                        
+                        <!-- Face portrait -->
+                        <img :src="m.photo_path" class="w-16 h-16 object-cover rounded-full border border-white/10 bg-black">
+                        
+                        <!-- Info -->
+                        <div class="space-y-0.5">
+                            <div class="text-[10px] text-blue-400 font-bold font-mono">{{ m.registration_id }}</div>
+                            <div class="font-bold text-sm text-white truncate max-w-[140px]">{{ m.full_name }}</div>
+                            <div class="text-[10px] text-zinc-400">Age: {{ m.age }} | {{ m.year_of_study }}</div>
+                            <div class="text-[10px] text-zinc-500 truncate max-w-[140px]">{{ m.email }}</div>
+                            <div class="text-[10px] text-zinc-500 truncate max-w-[140px]">{{ m.contact }}</div>
+                        </div>
+
+                        <!-- Complete 4-Preferences details breakdown inside Inspector Card -->
+                        <div class="w-full text-[10px] text-left border-t border-white/5 pt-3 space-y-2.5 text-zinc-400">
+                            <div>
+                                <strong class="text-white block uppercase text-[8px] tracking-wider mb-0.5">UNGA Choices (1 & 2)</strong>
+                                <div class="truncate">1. {{ m.unga1_continent }} <span v-if="m.unga1_countries?.length" class="text-zinc-500">({{ m.unga1_countries.filter(c=>c).join(', ') }})</span></div>
+                                <div class="truncate mt-0.5">2. {{ m.unga2_continent }} <span v-if="m.unga2_countries?.length" class="text-zinc-500">({{ m.unga2_countries.filter(c=>c).join(', ') }})</span></div>
+                            </div>
+                            <div class="pt-2 border-t border-white/5">
+                                <strong class="text-white block uppercase text-[8px] tracking-wider mb-0.5">TLA Choices (1 & 2)</strong>
+                                <div class="truncate">1. {{ m.tla1_zone }} <span v-if="m.tla1_mla" class="text-zinc-500">({{ m.tla1_mla }})</span></div>
+                                <div class="truncate mt-0.5">2. {{ m.tla2_zone }} <span v-if="m.tla2_mla" class="text-zinc-500">({{ m.tla2_mla }})</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Manual position allocation summary -->
+                        <div class="w-full text-[10px] text-left border-t border-white/5 pt-2.5">
+                            <span class="text-[8px] uppercase tracking-wider text-slate-500 block font-bold">Allocated Position</span>
+                            <span class="text-emerald-400 font-semibold truncate block">{{ m.allocated_country || m.allocated_mla || 'Not Allocated' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-2">
+                    <button @click="showGroupModal = false" class="px-5 py-2 bg-zinc-900 border border-white/10 hover:bg-white hover:text-black transition text-xs font-semibold rounded-xl">
+                        Close Inspector
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -270,9 +376,14 @@
         createApp({
             setup() {
                 const participants = ref([]);
-                const filters = reactive({ search: '', status: '', type: '', experience: '' }); // Added type filtering
+                const filters = reactive({ search: '', status: '', type: '', experience: '' });
                 const showPassModal = ref(false);
                 const activePass = ref({});
+                
+                // Group Inspector Reactive States
+                const showGroupModal = ref(false);
+                const activeGroupMembers = ref([]);
+                const activeGroupId = ref('');
 
                 const fetchRegistrations = async () => {
                     try {
@@ -328,33 +439,12 @@
                     window.print();
                 };
 
-                // Formats the complex serialized preference payloads dynamically for visual table grids
-                const formatDetails = (detailsStr) => {
-                    try {
-                        const d = JSON.parse(detailsStr);
-                        let summary = '';
-                        
-                        if (d.sub1 && (d.sub1.continent || d.sub1.zone)) {
-                            summary += `P1: ${d.sub1.continent || d.sub1.zone} `;
-                            if (d.sub1.countries && d.sub1.countries.some(c => c)) {
-                                summary += `(${d.sub1.countries.filter(c => c).join(', ')})`;
-                            } else if (d.sub1.mla) {
-                                summary += `(${d.sub1.mla})`;
-                            }
-                        }
-                        
-                        if (d.sub2 && (d.sub2.continent || d.sub2.zone)) {
-                            summary += ` | P2: ${d.sub2.continent || d.sub2.zone} `;
-                            if (d.sub2.countries && d.sub2.countries.some(c => c)) {
-                                summary += `(${d.sub2.countries.filter(c => c).join(', ')})`;
-                            } else if (d.sub2.mla) {
-                                summary += `(${d.sub2.mla})`;
-                            }
-                        }
-                        
-                        return summary || 'No details provided';
-                    } catch (e) {
-                        return detailsStr;
+                // Real-time group members inspector trigger
+                const inspectGroup = (groupId) => {
+                    if (groupId) {
+                        activeGroupId.value = groupId;
+                        activeGroupMembers.value = participants.value.filter(p => p.group_id === groupId);
+                        showGroupModal.value = true;
                     }
                 };
 
@@ -380,6 +470,13 @@
                     }
                 };
 
+                // Dynamically filters the search input value to match a specific group ID
+                const filterByGroupId = (groupId) => {
+                    if (groupId) {
+                        filters.search = groupId;
+                    }
+                };
+
                 const logout = async () => {
                     await fetch('/api/admin/logout', { method: 'POST' });
                     window.location.href = '/admin-login';
@@ -388,7 +485,15 @@
                 const filteredParticipants = computed(() => {
                     return participants.value.filter(p => {
                         const s = filters.search.toLowerCase();
-                        const matchText = !s || p.full_name.toLowerCase().includes(s) || p.registration_id.toLowerCase().includes(s) || p.institution.toLowerCase().includes(s) || p.utr_id.toLowerCase().includes(s);
+                        
+                        // Upgraded search filter logic to support matching group IDs
+                        const matchText = !s || 
+                            p.full_name.toLowerCase().includes(s) || 
+                            p.registration_id.toLowerCase().includes(s) || 
+                            p.institution.toLowerCase().includes(s) || 
+                            p.utr_id.toLowerCase().includes(s) ||
+                            (p.group_id && p.group_id.toLowerCase().includes(s));
+
                         const matchStatus = !filters.status || p.status === filters.status;
                         const matchExp = !filters.experience || p.has_experience === filters.experience;
                         
@@ -421,7 +526,9 @@
 
                 return { 
                     participants, filters, filteredParticipants, showPassModal, activePass,
-                    approvePayment, updateAllocation, openPassGenerator, getVerificationQR, printPass, formatDetails, downloadParticipantPhoto, logout, exportToCSV 
+                    showGroupModal, activeGroupMembers, activeGroupId, inspectGroup,
+                    approvePayment, updateAllocation, openPassGenerator, getVerificationQR, printPass, 
+                    downloadParticipantPhoto, filterByGroupId, logout, exportToCSV 
                 };
             }
         }).mount('#app');
