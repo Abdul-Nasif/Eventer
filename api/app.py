@@ -46,7 +46,9 @@ def allowed_file(filename):
 @app.route('/')
 def home():
     public_domain = os.environ.get("PUBLIC_DOMAIN", "http://127.0.0.1:3000")
-    return render_template('index.html', public_domain=public_domain)
+    # Fetch coupon code dynamically from environment variables
+    coupon_code = os.environ.get("COUPON_CODE", "VAAG450")
+    return render_template('index.html', public_domain=public_domain, coupon_code=coupon_code)
 
 @app.route('/admin-login')
 def admin_login_page():
@@ -91,7 +93,7 @@ def register():
         form_data = json.loads(form_data_str)
         reg_type = form_data.get('regType', 'individual')
 
-        # Check if UTR ID already exists in database
+        # Check if UTR already exists in database
         check_utr = supabase.table('registrations').select('id').eq('utr_id', form_data['utrId']).execute()
         if len(check_utr.data) > 0:
             return jsonify({'error': 'This UTR ID has already been registered.'}), 400
@@ -101,6 +103,10 @@ def register():
         screenshot_unique_name = f"receipt-{os.urandom(8).hex()}-{screenshot_name}"
         supabase.storage.from_('receipts').upload(screenshot_unique_name, screenshot_file.read(), {"content-type": screenshot_file.content_type})
         screenshot_url = supabase.storage.from_('receipts').get_public_url(screenshot_unique_name)
+
+        # FETCH HIGHEST DATABASE SERIAL ID ONCE (Immune to race-conditions and deletion gaps)
+        max_res = supabase.table('registrations').select('id').order('id', desc=True).limit(1).execute()
+        highest_id = max_res.data[0]['id'] if max_res.data else 0
 
         registered_ids = []
 
@@ -115,9 +121,17 @@ def register():
             supabase.storage.from_('receipts').upload(photo_unique_name, photo_file.read(), {"content-type": photo_file.content_type})
             photo_url = supabase.storage.from_('receipts').get_public_url(photo_unique_name)
 
-            count_res = supabase.table('registrations').select('id', count='exact').execute()
-            next_num = str(count_res.count + 101).zfill(6)
-            registration_id = f"VMUN-2026-{next_num}"
+            # Generate sequentially from highest ID
+            registration_id = f"VMUN-2026-{str(highest_id + 101).zfill(6)}"
+
+            # SAFE PREFERENCE EXTRACTION FOR INDIVIDUALS (Parses both flat and nested objects) [1]
+            pref1_committee = 'UNGA'
+            if 'pref1_committee' in form_data:
+                pref1_committee = form_data['pref1_committee']
+            elif 'pref1' in form_data and isinstance(form_data['pref1'], dict):
+                pref1_committee = form_data['pref1'].get('committee', 'UNGA')
+
+            pref2_committee = 'TLA' if pref1_committee == 'UNGA' else 'UNGA'
 
             insert_payload = {
                 "registration_id": registration_id,
@@ -138,10 +152,11 @@ def register():
                 "tla2_zone": form_data['tla2']['zone'],
                 "tla2_mla": form_data['tla2']['mla'],
                 
-                "pref1_committee": "UNGA",
-                "pref1_details": json.dumps(form_data['unga1']),
-                "pref2_committee": "TLA",
-                "pref2_details": json.dumps(form_data['tla1']),
+                # Dynamic mapping of serialized preferences in the requested order [1]
+                "pref1_committee": pref1_committee,
+                "pref1_details": json.dumps(form_data['unga1'] if pref1_committee == 'UNGA' else form_data['tla1']),
+                "pref2_committee": pref2_committee,
+                "pref2_details": json.dumps(form_data['tla1'] if pref1_committee == 'UNGA' else form_data['unga1']),
                 
                 "utr_id": form_data['utrId'],
                 "screenshot_path": screenshot_url,
@@ -167,9 +182,17 @@ def register():
                 supabase.storage.from_('receipts').upload(photo_unique_name, photo_file.read(), {"content-type": photo_file.content_type})
                 photo_url = supabase.storage.from_('receipts').get_public_url(photo_unique_name)
 
-                count_res = supabase.table('registrations').select('id', count='exact').execute()
-                next_num = str(count_res.count + 101).zfill(6)
-                registration_id = f"VMUN-2026-{next_num}"
+                # Safely increment sequentially in memory (+ i) to eliminate duplicates entirely
+                registration_id = f"VMUN-2026-{str(highest_id + 101 + i).zfill(6)}"
+
+                # SAFE PREFERENCE EXTRACTION FOR GROUP DELEGATES [1]
+                pref1_committee = 'UNGA'
+                if 'pref1_committee' in member:
+                    pref1_committee = member['pref1_committee']
+                elif 'pref1' in member and isinstance(member['pref1'], dict):
+                    pref1_committee = member['pref1'].get('committee', 'UNGA')
+
+                pref2_committee = 'TLA' if pref1_committee == 'UNGA' else 'UNGA'
 
                 insert_payload = {
                     "registration_id": registration_id,
@@ -190,10 +213,11 @@ def register():
                     "tla2_zone": member['tla2']['zone'],
                     "tla2_mla": member['tla2']['mla'],
                     
-                    "pref1_committee": "UNGA",
-                    "pref1_details": json.dumps(member['unga1']),
-                    "pref2_committee": "TLA",
-                    "pref2_details": json.dumps(member['tla1']),
+                    # Dynamic mapping of serialized preferences in the requested order [1]
+                    "pref1_committee": pref1_committee,
+                    "pref1_details": json.dumps(member['unga1'] if pref1_committee == 'UNGA' else member['tla1']),
+                    "pref2_committee": pref2_committee,
+                    "pref2_details": json.dumps(member['tla1'] if pref1_committee == 'UNGA' else member['unga1']),
                     
                     "utr_id": form_data['utrId'],  # Shared transaction id
                     "screenshot_path": screenshot_url, # Shared receipt image
