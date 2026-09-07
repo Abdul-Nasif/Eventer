@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VAAG MUN 2026 - Registrations Closed</title>
+    <title>VAAG MUN 2026 - Attendance Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -62,7 +62,7 @@
     </header>
 
     <div class="flex-grow flex flex-col justify-center py-10 px-4">
-        <div class="w-full max-w-3xl mx-auto glass-card p-8 md:p-12 rounded-3xl text-center space-y-8">
+        <div class="w-full max-w-3xl mx-auto glass-card p-6 md:p-10 rounded-3xl text-center space-y-8">
             
             <!-- 1. HEADER BRANDING -->
             <div class="space-y-2">
@@ -72,32 +72,75 @@
                     <img src="/static/saclogo_old.png" alt="Right Logo" class="h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 object-contain rounded-full shadow-md border border-white/5 bg-neutral-950 p-1" onerror="handleRightLogoError(this)">
                 </div>
                 <span class="text-[10px] sm:text-xs text-zinc-400 uppercase font-bold tracking-[0.3em] block">Vaagdevi Colleges Presents</span>
-                <h1 class="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-yapari text-white uppercase leading-none block select-none">VAAG MUN 2026</h1>
-                <p class="text-xs sm:text-sm text-zinc-500 uppercase font-semibold tracking-widest pt-1">Participant Registration Portal</p>
+                <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-yapari text-white uppercase leading-none block select-none">VAAG MUN 2026</h1>
+                <p class="text-xs sm:text-sm text-zinc-500 uppercase font-semibold tracking-widest pt-1">Participant Attendance Portal</p>
             </div>
 
-            <!-- 2. REGISTRATIONS CLOSED DISPLAY CARD -->
-            <div class="py-10 px-6 bg-zinc-950/50 border border-white/5 rounded-2xl max-w-xl mx-auto space-y-4">
-                <div class="w-12 h-12 bg-zinc-900 border border-white/10 text-zinc-400 rounded-full flex items-center justify-center mx-auto text-xl mb-2">
-                    <i class="fa-solid fa-lock"></i>
+            <!-- FLASH MESSAGE SYSTEM -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <div class="max-w-xl mx-auto">
+                {% for category, message in messages %}
+                  <div class="p-4 rounded-xl text-xs md:text-sm font-semibold text-center shadow-lg border backdrop-blur-md transition-all
+                    {% if category == 'success' %} bg-emerald-500/10 text-emerald-400 border-emerald-500/20
+                    {% elif category == 'warning' %} bg-amber-500/10 text-amber-400 border-amber-500/20
+                    {% else %} bg-rose-500/10 text-rose-400 border-rose-500/20 {% endif %}">
+                    <i class="fa-solid {% if category == 'success' %}fa-circle-check{% elif category == 'warning' %}fa-triangle-exclamation{% else %}fa-circle-xmark{% endif %} mr-2"></i>
+                    {{ message }}
+                  </div>
+                {% endfor %}
                 </div>
-                
-                <h2 class="text-xl md:text-2xl font-bold text-white uppercase tracking-wider">Registrations Closed</h2>
-                
-                <p class="text-xs md:text-sm text-zinc-400 leading-relaxed max-w-md mx-auto">
-                    The registrations for vaag mun 2026 has been closed. We have reached our maximum capacity for delegate registrations.
-                </p>
+              {% endif %}
+            {% endwith %}
 
-                <div class="pt-2 text-sm font-semibold tracking-widest text-zinc-200 uppercase">
-                    Thank You. See you at VAAG MUN 2027!
+            <!-- SINGLE-COLUMN ATTENDANCE CHECK-IN CARD -->
+            <div class="max-w-xl mx-auto text-left w-full">
+                <div class="p-6 md:p-8 bg-zinc-950/50 border border-white/5 rounded-2xl space-y-4">
+                    <div class="w-10 h-10 bg-zinc-900 border border-white/10 text-blue-400 rounded-full flex items-center justify-center text-md mb-3">
+                        <i class="fa-solid fa-qrcode"></i>
+                    </div>
+                    <h2 class="text-lg font-bold text-white uppercase tracking-wider">Mark Attendance</h2>
+                    <p class="text-xs text-zinc-400 leading-relaxed">
+                        Please provide your department and upload your official VMUN e-pass image. Our system will extract your QR code and log your attendance automatically.
+                    </p>
+
+                    <!-- File & Department Form -->
+                    <form action="/upload-pass" method="POST" enctype="multipart/form-data" class="space-y-4 pt-2">
+                        
+                        <!-- Department Input -->
+                        <div class="space-y-1.5">
+                            <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Your Department</label>
+                            <input type="text" name="department" placeholder="e.g., CSE, ECE, MBA..." required
+                                class="w-full p-3 rounded-xl bg-black border border-white/10 text-white outline-none focus:border-zinc-500 transition text-xs">
+                        </div>
+
+                        <!-- Image Drop Area -->
+                        <div class="space-y-1.5">
+                            <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">E-Pass Photo</label>
+                            <div class="border-2 border-dashed border-zinc-800 hover:border-zinc-700 rounded-xl p-6 text-center transition cursor-pointer relative bg-black/40">
+                                <input type="file" name="epass_file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="epassInput" required>
+                                
+                                <div class="space-y-2" id="dropPrompt">
+                                    <i class="fa-solid fa-arrow-up-from-bracket text-zinc-500 text-xl"></i>
+                                    <p class="text-xs font-semibold text-zinc-300">Click to Select E-Pass Image</p>
+                                    <p class="text-[10px] text-zinc-550">Supports PNG, JPG, or JPEG formats</p>
+                                </div>
+                                <div id="selectionPreview" class="hidden text-xs font-bold text-blue-400 py-2 break-all"></div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-white hover:bg-zinc-200 text-black font-bold py-3.5 px-4 rounded-xl transition duration-200 text-[10px] tracking-widest uppercase">
+                            Verify & Submit Check-in
+                        </button>
+                    </form>
                 </div>
             </div>
 
-            <!-- 3. SAC SUPPORT CONTACT BANNER (Retained for registered users) -->
+            <!-- SAC SUPPORT CONTACT BANNER -->
             <div class="max-w-xl mx-auto p-4 bg-zinc-900/40 border border-white/5 rounded-2xl text-xs text-zinc-450 text-left flex items-start gap-3">
-                <i class="fa-solid fa-circle-info mt-0.5 text-zinc-400 text-sm"></i>
+                <i class="fa-solid fa-circle-info mt-0.5 text-zinc-450 text-sm"></i>
                 <div>
-                    <span class="font-bold text-white">Registered Delegates Support:</span> If you have already registered and have queries regarding your payment verification, E-Tickets, or allocation, please contact us on Instagram <a href="https://instagram.com/sac_vce" target="_blank" class="underline font-bold text-white">@sac_vce</a> or call/WhatsApp <a href="tel:+919133651540" class="underline font-bold text-white">+91 9133651540</a>.
+                    <span class="font-bold text-white">Registered Delegates Support:</span> If you have queries regarding your payment verification, E-Tickets, or allocation, please contact us on Instagram <a href="https://instagram.com/sac_vce" target="_blank" class="underline font-bold text-white">@sac_vce</a> or call/WhatsApp <a href="tel:+919133651540" class="underline font-bold text-white">+91 9133651540</a>.
                 </div>
             </div>
 
@@ -106,6 +149,19 @@
 
     <!-- Helper JavaScript Functions to Handle Image Formats Automatically -->
     <script>
+        // Interactive Selection Preview Handler
+        const fileInput = document.getElementById('epassInput');
+        const dropPrompt = document.getElementById('dropPrompt');
+        const preview = document.getElementById('selectionPreview');
+
+        fileInput.addEventListener('change', function() {
+            if (fileInput.files.length > 0) {
+                dropPrompt.classList.add('hidden');
+                preview.classList.remove('hidden');
+                preview.innerHTML = `<i class="fa-solid fa-file-image mr-1"></i> Selected: ${fileInput.files[0].name}`;
+            }
+        });
+
         function handleMunLogoError(img) {
             if (img.src.includes('.png')) {
                 img.src = '/static/mun_logo.jpg';
