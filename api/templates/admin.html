@@ -53,8 +53,8 @@
         <!-- Header Controls -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center p-6 rounded-2xl gap-4 glass-card border border-white/5">
             <div>
-                <h1 class="text-xl font-bold text-white font-yapari">Vaagdevi MUN 2K26</h1>
-                <p class="text-xs text-zinc-500">Database Engine: Supabase (PostgreSQL)</p>
+                <h1 class="text-xl font-bold text-white font-yapari">Vaagdevi MUN 2K26 Dashboard</h1>
+                <p class="text-xs text-zinc-500">Database Engine: Supabase (PostgreSQL) | Attendance & Department Filters Active</p>
             </div>
             <div class="flex gap-2">
                 <button @click="exportToCSV" class="px-4 py-2 bg-white text-black text-xs font-bold rounded-lg flex items-center gap-1.5 shadow-sm hover:bg-zinc-200 transition">
@@ -65,34 +65,53 @@
         </div>
 
         <!-- Metrics Grid -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
             <div class="glass-card p-4 rounded-xl"><span class="text-[10px] font-bold text-zinc-500 uppercase">Total Registers</span><div class="text-xl font-extrabold text-white mt-1">{{ participants.length }}</div></div>
             <div class="glass-card p-4 rounded-xl"><span class="text-[10px] font-bold text-zinc-500 uppercase">Approved Payments</span><div class="text-xl font-extrabold text-emerald-400 mt-1">{{ participants.filter(p=>p.status === 'Approved').length }}</div></div>
             <div class="glass-card p-4 rounded-xl"><span class="text-[10px] font-bold text-zinc-500 uppercase">Pending Audits</span><div class="text-xl font-extrabold text-amber-400 mt-1">{{ participants.filter(p=>p.status === 'Pending').length }}</div></div>
+            <div class="glass-card p-4 rounded-xl"><span class="text-[10px] font-bold text-zinc-500 uppercase">Present Checked-In</span><div class="text-xl font-extrabold text-blue-400 mt-1">{{ participants.filter(p=>p.attended === true).length }}</div></div>
             <div class="glass-card p-4 rounded-xl"><span class="text-[10px] font-bold text-zinc-500 uppercase">Country Assigned</span><div class="text-xl font-extrabold text-white mt-1">{{ participants.filter(p=>p.allocated_country).length }}</div></div>
             <div class="glass-card p-4 rounded-xl"><span class="text-[10px] font-bold text-zinc-500 uppercase">MLA Assigned</span><div class="text-xl font-extrabold text-white mt-1">{{ participants.filter(p=>p.allocated_mla).length }}</div></div>
         </div>
 
-        <!-- Query Filtering Bar (4-Column Grid) -->
-        <div class="p-4 rounded-xl grid grid-cols-1 md:grid-cols-4 gap-3 text-xs glass-card border border-white/5">
+        <!-- Query Filtering Bar (7-Column Grid) -->
+        <div class="p-4 rounded-xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 text-xs glass-card border border-white/5">
             <div class="relative">
-                <input type="text" v-model="filters.search" placeholder="Search by name, ID, college, UTR ID..." class="p-2.5 rounded-lg outline-none w-full pr-8">
-                <!-- Clear Search Input Button -->
+                <input type="text" v-model="filters.search" placeholder="Search name, ID, UTR..." class="p-2.5 rounded-lg outline-none w-full pr-8">
                 <button v-if="filters.search" @click="filters.search = ''" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white">
                     <i class="fa-solid fa-circle-xmark"></i>
                 </button>
             </div>
             
+            <!-- College/Institution Filter -->
+            <select v-model="filters.institution" class="p-2.5 rounded-lg outline-none">
+                <option value="" class="bg-zinc-950">All Colleges (Institutions)</option>
+                <option v-for="inst in uniqueInstitutions" :key="inst" :value="inst" class="bg-zinc-950">{{ inst }}</option>
+            </select>
+
+            <!-- Dynamic Department Filter -->
+            <select v-model="filters.department" class="p-2.5 rounded-lg outline-none">
+                <option value="" class="bg-zinc-950">All Departments</option>
+                <option v-for="dept in uniqueDepartments" :key="dept" :value="dept" class="bg-zinc-950">{{ dept }}</option>
+            </select>
+
+            <!-- Year of Study Filter -->
+            <select v-model="filters.year_of_study" class="p-2.5 rounded-lg outline-none">
+                <option value="" class="bg-zinc-950">All Years of Study</option>
+                <option v-for="yr in uniqueYears" :key="yr" :value="yr" class="bg-zinc-950">Year {{ yr }}</option>
+            </select>
+
+            <!-- Attendance Status Filter -->
+            <select v-model="filters.attended" class="p-2.5 rounded-lg outline-none">
+                <option value="" class="bg-zinc-950">All Attendance States</option>
+                <option value="Present" class="bg-zinc-950">Present (Checked-In)</option>
+                <option value="Absent" class="bg-zinc-950">Absent</option>
+            </select>
+
             <select v-model="filters.status" class="p-2.5 rounded-lg outline-none">
                 <option value="" class="bg-zinc-950">All Verification Statuses</option>
                 <option value="Pending" class="bg-zinc-950">Pending</option>
                 <option value="Approved" class="bg-zinc-950">Approved</option>
-            </select>
-
-            <select v-model="filters.type" class="p-2.5 rounded-lg outline-none">
-                <option value="" class="bg-zinc-950">All Registration Types</option>
-                <option value="individual" class="bg-zinc-950">Individual Pass Only</option>
-                <option value="group" class="bg-zinc-950">Group Pass Only</option>
             </select>
 
             <select v-model="filters.experience" class="p-2.5 rounded-lg outline-none">
@@ -113,6 +132,7 @@
                             <th class="px-4 py-3">Preference 2 Choices</th>
                             <th class="px-4 py-3">Receipt & Photos</th>
                             <th class="px-4 py-3">Live Allocations</th>
+                            <th class="px-4 py-3 text-center">Attendance</th>
                             <th class="px-4 py-3 text-center">Audit Status</th>
                             <th class="px-4 py-3 text-right">Actions</th>
                         </tr>
@@ -127,22 +147,8 @@
                                         <div class="font-mono text-white font-bold">{{ p.registration_id }}</div>
                                         <div class="font-bold text-white text-sm">{{ p.full_name }} (Age: {{ p.age }})</div>
                                         <div class="text-[10px] text-zinc-400">{{ p.email }} | {{ p.contact }}</div>
-                                        <div class="text-[11px] font-semibold text-zinc-400 mb-1">{{ p.institution }} ({{ p.year_of_study }})</div>
-                                        
-                                        <!-- GROUP IDENTIFICATION BADGES -->
-                                        <div v-if="p.group_id" class="flex flex-col gap-1 mt-1.5">
-                                            <div class="flex items-center gap-1">
-                                                <span class="px-2 py-0.5 text-[9px] font-bold bg-emerald-950/20 border border-emerald-900/30 rounded-md text-emerald-400">
-                                                    <i class="fa-solid fa-users"></i> {{ p.group_id }}
-                                                </span>
-                                                <button @click="filterByGroupId(p.group_id)" class="px-1.5 py-0.5 text-[9px] font-bold bg-blue-950/20 border border-blue-900/30 rounded-md text-blue-400 hover:bg-blue-600 hover:text-white transition outline-none">
-                                                    <i class="fa-solid fa-filter"></i> Filter
-                                                </button>
-                                            </div>
-                                            <!-- GROUP INSPECTION ACTION -->
-                                            <button @click="inspectGroup(p.group_id)" class="w-max px-2 py-0.5 text-[9px] font-bold bg-zinc-950 border border-white/10 rounded-md text-zinc-300 hover:bg-white hover:text-black transition outline-none">
-                                                <i class="fa-solid fa-expand"></i> View Group Details
-                                            </button>
+                                        <div class="text-[11px] font-semibold text-zinc-400 mb-1">
+                                            {{ p.institution }} <span v-if="p.department">| {{ p.department }}</span> (Year {{ p.year_of_study }})
                                         </div>
                                     </div>
                                 </div>
@@ -189,9 +195,7 @@
                                 <div class="font-mono text-[10px] font-bold text-white">UTR: {{ p.utr_id }}</div>
                                 <div class="flex flex-col gap-1.5">
                                     <a :href="p.screenshot_path" target="_blank" class="inline-flex items-center gap-1 text-blue-600 hover:underline text-[10px] font-semibold">
-                                        <i class="fa-regular fa-image"></i> 
-                                        <span v-if="p.group_id">View Shared Receipt</span>
-                                        <span v-else>View Receipt</span>
+                                        <i class="fa-regular fa-image"></i> View Receipt
                                     </a>
                                     <a :href="p.photo_path" target="_blank" class="inline-flex items-center gap-1 text-indigo-400 hover:underline text-[10px] font-semibold">
                                         <i class="fa-regular fa-user"></i> View Face Photo
@@ -201,6 +205,8 @@
                                     </button>
                                 </div>
                             </td>
+
+                            <!-- Column 5: Live Allocations -->
                             <td class="px-4 py-4 space-y-1.5">
                                 <div class="flex items-center gap-1.5 text-[10px]">
                                     <span class="text-zinc-500">Country:</span>
@@ -211,12 +217,31 @@
                                     <input type="text" v-model="p.allocated_mla" @blur="updateAllocation(p)" class="p-1.5 bg-black border border-white/10 rounded w-24 text-white">
                                 </div>
                             </td>
+
+                            <!-- Column 6: Live Check-in Attendance Status -->
+                            <td class="px-4 py-4 text-center">
+                                <div v-if="p.attended" class="space-y-1">
+                                    <span class="px-2.5 py-1 text-[9px] font-bold rounded-full bg-emerald-950/40 border border-emerald-900/30 text-emerald-400">
+                                        <i class="fa-solid fa-circle-check"></i> Present
+                                    </span>
+                                    <div class="text-[9px] text-zinc-500 font-mono tracking-tight" v-if="p.attendance_time">
+                                        {{ formatTime(p.attendance_time) }}
+                                    </div>
+                                </div>
+                                <span v-else class="px-2.5 py-1 text-[9px] font-bold rounded-full bg-zinc-900 border border-white/5 text-zinc-500">
+                                    <i class="fa-regular fa-circle"></i> Absent
+                                </span>
+                            </td>
+
+                            <!-- Column 7: Audit Payment Status -->
                             <td class="px-4 py-4 text-center">
                                 <span class="px-2.5 py-1 text-[9px] font-bold rounded-full"
                                     :class="p.status === 'Approved' ? 'bg-emerald-950/40 border border-emerald-900/30 text-emerald-400' : 'bg-amber-950/40 border border-amber-900/30 text-amber-400'">
                                     {{ p.status }}
                                 </span>
                             </td>
+
+                            <!-- Column 8: Table Row Actions -->
                             <td class="px-4 py-4 text-right">
                                 <div class="flex flex-col gap-1.5 items-end">
                                     <button v-if="p.status === 'Pending'" @click="approvePayment(p)" class="px-3 py-1.5 bg-white text-black font-semibold text-[10px] rounded hover:bg-zinc-200 transition">Approve</button>
@@ -227,144 +252,10 @@
                             </td>
                         </tr>
                         <tr v-if="filteredParticipants.length === 0">
-                            <td colspan="7" class="px-4 py-8 text-center text-zinc-500 italic">No registrations found.</td>
+                            <td colspan="8" class="px-4 py-8 text-center text-zinc-500 italic">No registrations matching current filter criteria.</td>
                         </tr>
                     </tbody>
                 </table>
-            </div>
-        </div>
-
-        <!-- 3. NEW: GROUP INSPECTION POPUP PANEL (DISPLAYING ALL 4 DETAILED PREFERENCES) -->
-        <div v-if="showGroupModal" class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <div class="bg-zinc-950 rounded-3xl p-6 max-w-5xl w-full shadow-2xl space-y-6 relative border border-white/10 text-white animate-fade-in">
-                
-                <!-- Close Button -->
-                <button @click="showGroupModal = false" class="absolute top-4 right-4 text-zinc-500 hover:text-white text-lg outline-none">
-                    <i class="fa-solid fa-circle-xmark"></i>
-                </button>
-
-                <div class="border-b border-white/5 pb-3">
-                    <h3 class="text-lg font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                        <i class="fa-solid fa-users text-emerald-400"></i> Group Details Inspector: {{ activeGroupId }}
-                    </h3>
-                    <p class="text-xs text-zinc-500">Displaying exact real-time profile and preference records for all 5 delegates in this group batch.</p>
-                </div>
-
-                <!-- 5 Member Horizontal/Grid Cards Layout -->
-                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 overflow-y-auto max-h-[60vh] pr-2">
-                    <div v-for="(m, i) in activeGroupMembers" :key="m.id" class="p-4 bg-zinc-900 border border-white/5 rounded-2xl flex flex-col items-center text-center space-y-4 relative">
-                        
-                        <!-- Face portrait -->
-                        <img :src="m.photo_path" class="w-16 h-16 object-cover rounded-full border border-white/10 bg-black">
-                        
-                        <!-- Info -->
-                        <div class="space-y-0.5">
-                            <div class="text-[10px] text-blue-400 font-bold font-mono">{{ m.registration_id }}</div>
-                            <div class="font-bold text-sm text-white truncate max-w-[140px]">{{ m.full_name }}</div>
-                            <div class="text-[10px] text-zinc-400">Age: {{ m.age }} | {{ m.year_of_study }}</div>
-                            <div class="text-[10px] text-zinc-500 truncate max-w-[140px]">{{ m.email }}</div>
-                            <div class="text-[10px] text-zinc-500 truncate max-w-[140px]">{{ m.contact }}</div>
-                        </div>
-
-                        <!-- Complete 4-Preferences details breakdown inside Inspector Card -->
-                        <div class="w-full text-[10px] text-left border-t border-white/5 pt-3 space-y-2.5 text-zinc-400">
-                            <div>
-                                <strong class="text-white block uppercase text-[8px] tracking-wider mb-0.5">UNGA Choices (1 & 2)</strong>
-                                <div class="truncate">1. {{ m.unga1_continent }} <span v-if="m.unga1_countries?.length" class="text-zinc-500">({{ m.unga1_countries.filter(c=>c).join(', ') }})</span></div>
-                                <div class="truncate mt-0.5">2. {{ m.unga2_continent }} <span v-if="m.unga2_countries?.length" class="text-zinc-500">({{ m.unga2_countries.filter(c=>c).join(', ') }})</span></div>
-                            </div>
-                            <div class="pt-2 border-t border-white/5">
-                                <strong class="text-white block uppercase text-[8px] tracking-wider mb-0.5">TLA Choices (1 & 2)</strong>
-                                <div class="truncate">1. {{ m.tla1_zone }} <span v-if="m.tla1_mla" class="text-zinc-500">({{ m.tla1_mla }})</span></div>
-                                <div class="truncate mt-0.5">2. {{ m.tla2_zone }} <span v-if="m.tla2_mla" class="text-zinc-500">({{ m.tla2_mla }})</span></div>
-                            </div>
-                        </div>
-
-                        <!-- Manual position allocation summary -->
-                        <div class="w-full text-[10px] text-left border-t border-white/5 pt-2.5">
-                            <span class="text-[8px] uppercase tracking-wider text-slate-500 block font-bold">Allocated Position</span>
-                            <span class="text-emerald-400 font-semibold truncate block">{{ m.allocated_country || m.allocated_mla || 'Not Allocated' }}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex justify-end pt-2">
-                    <button @click="showGroupModal = false" class="px-5 py-2 bg-zinc-900 border border-white/10 hover:bg-white hover:text-black transition text-xs font-semibold rounded-xl">
-                        Close Inspector
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- E-PASS DYNAMIC MODAL GENERATOR -->
-        <div v-if="showPassModal" class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <div class="bg-zinc-950 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-6 relative border border-white/10 text-white">
-                
-                <!-- Close Button -->
-                <button @click="showPassModal = false" class="absolute top-4 right-4 text-zinc-500 hover:text-white text-lg">
-                    <i class="fa-solid fa-circle-xmark"></i>
-                </button>
-
-                <div class="text-center">
-                    <h3 class="text-base font-bold text-white font-yapari">E-Pass Generated!</h3>
-                    <p class="text-xs text-zinc-400">Save as PDF or print this pass for the delegate.</p>
-                </div>
-
-                <!-- EVENT PASS E-TICKET -->
-                <div id="printable-ticket" class="max-w-sm mx-auto bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white rounded-3xl overflow-hidden shadow-2xl border border-blue-900/40 flex flex-col">
-                    <div class="bg-blue-600 p-4 text-center border-b border-blue-500/30 flex items-center justify-between px-6">
-                        <span class="text-[10px] uppercase tracking-widest font-bold text-white">Delegate Pass</span>
-                        <span class="text-xs font-bold text-white tracking-tight">VAAG MUN 2K26</span>
-                    </div>
-
-                    <div class="p-6 space-y-6 text-left flex flex-col sm:flex-row gap-4 items-center">
-                        <div class="flex-grow space-y-3.5">
-                            <!-- Portrait Photo inside E-Pass Badge -->
-                            <div class="mb-2">
-                                <img :src="activePass.photo_path" alt="Delegate Photo" class="w-20 h-20 object-cover rounded-xl border-2 border-white/10 shadow-md">
-                            </div>
-                            <div>
-                                <span class="text-[9px] uppercase tracking-wider text-slate-400 block font-semibold">Delegate ID</span>
-                                <span class="text-sm font-mono font-bold tracking-wider text-blue-400">{{ activePass.registration_id }}</span>
-                            </div>
-                            <div>
-                                <span class="text-[9px] uppercase tracking-wider text-slate-400 block font-semibold">Name</span>
-                                <span class="text-xs font-bold text-white">{{ activePass.full_name }}</span>
-                            </div>
-                            <div>
-                                <span class="text-[9px] uppercase tracking-wider text-slate-400 block font-semibold">Institution</span>
-                                <span class="text-[10px] font-medium text-slate-200">{{ activePass.institution }}</span>
-                            </div>
-                            <div>
-                                <span class="text-[9px] uppercase tracking-wider text-slate-400 block font-semibold">Allocation Details</span>
-                                <span class="text-[10px] font-bold text-emerald-400">
-                                    Allocated Position: <br/>
-                                    {{ activePass.allocated_country || activePass.allocated_mla || 'Pending Allocation' }}
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- STABLE BINDING QR COMPONENT -->
-                        <div class="bg-white p-1.5 rounded-2xl flex flex-col items-center justify-center border shrink-0">
-                            <img :src="getVerificationQR(activePass.registration_id)" alt="Verification Pass" class="w-24 h-24 object-contain">
-                            <span class="text-[7px] font-bold text-black uppercase mt-1">Scan to Verify</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-950 p-3 text-center border-t border-zinc-800 text-[8px] text-zinc-500">
-                        Presenting this digital/printed pass is required at the entry gates.
-                    </div>
-                </div>
-
-                <div class="flex gap-2">
-                    <button @click="printPass" class="flex-1 py-2.5 bg-white text-black rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-md hover:bg-zinc-200 transition">
-                        <i class="fa-solid fa-print"></i> Print/Save Pass
-                    </button>
-                    <button @click="showPassModal = false" class="py-2.5 px-4 bg-zinc-900 border border-white/10 text-white rounded-xl text-xs font-semibold hover:bg-white/5 transition">
-                        Close
-                    </button>
-                </div>
-
             </div>
         </div>
 
@@ -376,14 +267,38 @@
         createApp({
             setup() {
                 const participants = ref([]);
-                const filters = reactive({ search: '', status: '', type: '', experience: '' });
+                
+                // Enhanced dynamic filter model
+                const filters = reactive({ 
+                    search: '', 
+                    status: '', 
+                    experience: '',
+                    attended: '',
+                    institution: '',
+                    year_of_study: '',
+                    department: ''
+                });
+
                 const showPassModal = ref(false);
                 const activePass = ref({});
-                
-                // Group Inspector Reactive States
-                const showGroupModal = ref(false);
-                const activeGroupMembers = ref([]);
-                const activeGroupId = ref('');
+
+                // Compute unique list of Colleges dynamically from data
+                const uniqueInstitutions = computed(() => {
+                    const insts = participants.value.map(p => p.institution).filter(Boolean);
+                    return [...new Set(insts)].sort();
+                });
+
+                // Compute unique list of Departments dynamically from data
+                const uniqueDepartments = computed(() => {
+                    const depts = participants.value.map(p => p.department).filter(Boolean);
+                    return [...new Set(depts)].sort();
+                });
+
+                // Compute unique list of Years dynamically from data
+                const uniqueYears = computed(() => {
+                    const years = participants.value.map(p => p.year_of_study).filter(item => item !== undefined && item !== null);
+                    return [...new Set(years)].sort((a, b) => a - b);
+                });
 
                 const fetchRegistrations = async () => {
                     try {
@@ -439,16 +354,6 @@
                     window.print();
                 };
 
-                // Real-time group members inspector trigger
-                const inspectGroup = (groupId) => {
-                    if (groupId) {
-                        activeGroupId.value = groupId;
-                        activeGroupMembers.value = participants.value.filter(p => p.group_id === groupId);
-                        showGroupModal.value = true;
-                    }
-                };
-
-                // REAL OUTBOUND PORTRAIT PHOTO DOWNLOAD HANDLER (Bypasses CORS restrictions dynamically)
                 const downloadParticipantPhoto = async (photoUrl, filename) => {
                     try {
                         const response = await fetch(photoUrl);
@@ -470,55 +375,67 @@
                     }
                 };
 
-                // Dynamically filters the search input value to match a specific group ID
-                const filterByGroupId = (groupId) => {
-                    if (groupId) {
-                        filters.search = groupId;
-                    }
-                };
-
                 const logout = async () => {
                     await fetch('/api/admin/logout', { method: 'POST' });
                     window.location.href = '/admin-login';
                 };
 
+                const formatTime = (isoString) => {
+                    if (!isoString) return '';
+                    try {
+                        const date = new Date(isoString);
+                        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    } catch (e) {
+                        return '';
+                    }
+                };
+
+                // Upgraded filtering computation including College, Department, Year, and Attendance
                 const filteredParticipants = computed(() => {
                     return participants.value.filter(p => {
                         const s = filters.search.toLowerCase();
                         
-                        // Upgraded search filter logic to support matching group IDs
                         const matchText = !s || 
                             p.full_name.toLowerCase().includes(s) || 
                             p.registration_id.toLowerCase().includes(s) || 
                             p.institution.toLowerCase().includes(s) || 
                             p.utr_id.toLowerCase().includes(s) ||
-                            (p.group_id && p.group_id.toLowerCase().includes(s));
+                            (p.department && p.department.toLowerCase().includes(s));
 
                         const matchStatus = !filters.status || p.status === filters.status;
                         const matchExp = !filters.experience || p.has_experience === filters.experience;
-                        
-                        // Dynamic Type Filtering Logic
-                        let matchType = true;
-                        if (filters.type === 'individual') {
-                            matchType = !p.group_id;
-                        } else if (filters.type === 'group') {
-                            matchType = !!p.group_id;
+
+                        // Attendance status filter
+                        let matchAttended = true;
+                        if (filters.attended === 'Present') {
+                            matchAttended = p.attended === true;
+                        } else if (filters.attended === 'Absent') {
+                            matchAttended = !p.attended;
                         }
 
-                        return matchText && matchStatus && matchExp && matchType;
+                        // College, Department, and Year of Study Filters
+                        const matchInstitution = !filters.institution || p.institution === filters.institution;
+                        const matchDepartment = !filters.department || p.department === filters.department;
+                        const matchYear = !filters.year_of_study || p.year_of_study == filters.year_of_study;
+
+                        return matchText && matchStatus && matchExp && matchAttended && matchInstitution && matchDepartment && matchYear;
                     });
                 });
 
+                // Exports dynamic filtered lists with updated department & attendance columns
                 const exportToCSV = () => {
-                    let csv = 'Registration ID,Full Name,Email,Institution,Status\n';
-                    participants.value.forEach(p => {
-                        csv += `"${p.registration_id}","${p.full_name}","${p.email}","${p.institution}","${p.status}"\n`;
+                    let csv = 'Registration ID,Full Name,Email,Contact,Institution,Department,Year of Study,Verification Status,Attended,Attendance Timestamp\n';
+                    filteredParticipants.value.forEach(p => {
+                        const attendedText = p.attended ? 'Present' : 'Absent';
+                        const timeText = p.attendance_time ? p.attendance_time : 'N/A';
+                        const deptText = p.department ? p.department : 'N/A';
+                        csv += `"${p.registration_id}","${p.full_name}","${p.email}","${p.contact}","${p.institution}","${deptText}","${p.year_of_study}","${p.status}","${attendedText}","${timeText}"\n`;
                     });
                     const blob = new Blob([csv], { type: 'text/csv' });
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
                     link.href = url;
-                    link.setAttribute('download', 'Vaagdevi_MUN_Registrations.csv');
+                    link.setAttribute('download', 'Vaagdevi_MUN_Filtered_Records.csv');
                     link.click();
                 };
 
@@ -526,9 +443,9 @@
 
                 return { 
                     participants, filters, filteredParticipants, showPassModal, activePass,
-                    showGroupModal, activeGroupMembers, activeGroupId, inspectGroup,
                     approvePayment, updateAllocation, openPassGenerator, getVerificationQR, printPass, 
-                    downloadParticipantPhoto, filterByGroupId, logout, exportToCSV 
+                    downloadParticipantPhoto, logout, exportToCSV, formatTime,
+                    uniqueInstitutions, uniqueDepartments, uniqueYears
                 };
             }
         }).mount('#app');
