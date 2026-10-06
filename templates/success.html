@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Registration submitted{% endblock %}
+
+{% block content %}
+<section class="form-section success-section">
+  <div class="success-card">
+    <div class="success-check">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <h1>Registration submitted!</h1>
+    <p class="success-sub">
+      {% if reg.status == 'approved' %}
+        Your registration is <strong>approved</strong>. See you there!
+      {% else %}
+        We're verifying your payment. You'll hear from us shortly.
+      {% endif %}
+    </p>
+
+    <div class="code-pill">
+      <span class="code-label">Your group code</span>
+      <span class="code-value" id="groupCode">{{ reg.group_code }}</span>
+      <button type="button" class="copy-btn" data-copy="{{ reg.group_code }}">
+        Copy
+      </button>
+    </div>
+
+    <div class="status-row">
+      <span class="badge
+        {% if reg.status == 'approved' %}badge-active
+        {% elif reg.status == 'rejected' %}badge-inactive
+        {% else %}badge-in-progress{% endif %}">
+        {{ reg.status.replace('_', ' ').title() }}
+      </span>
+    </div>
+
+    <a href="{{ url_for('index') }}" class="btn-primary">Back to Home</a>
+  </div>
+</section>
+{% endblock %}

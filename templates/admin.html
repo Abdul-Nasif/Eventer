@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+{% block title %}Admin · Registrations{% endblock %}
+
+{% block content %}
+<section class="admin-page">
+  <div class="container" id="adminRoot">
+
+    <!-- ===================== TOOLBAR ===================== -->
+    <div class="toolbar">
+      <div class="filters">
+        <input class="input" id="searchFilter" type="text"
+               placeholder="Search code, name, email, phone..."
+               style="width: 18rem" />
+        <select class="input" id="statusFilter" style="width: 10rem">
+          <option value="">All statuses</option>
+          <option value="pending_payment">Pending payment</option>
+          <option value="pending_approval">Pending approval</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </select>
+        <select class="input" id="planFilter" style="width: 10rem">
+          <option value="">All plans</option>
+          {% for key, p in plans.items() %}
+            <option value="{{ key }}">{{ p.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="display:flex; gap:.5rem; align-items:center">
+        <span class="muted small" id="countLabel">
+          {{ registrations|length }} registration{{ 's' if registrations|length != 1 else '' }}
+        </span>
+        <button type="button" class="btn btn-outline" id="expandAllBtn">
+          Expand all
+        </button>
+        <a href="{{ url_for('admin_logout') }}" class="btn btn-outline">Log out</a>
+      </div>
+    </div>
+
+    <!-- ===================== TABLE ===================== -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:34px"></th>
+            <th style="width:130px">Group code</th>
+            <th style="width:110px">Plan</th>
+            <th style="width:90px">Amount</th>
+            <th style="width:140px">Participants</th>
+            <th style="width:140px">UTR</th>
+            <th style="width:110px">Screenshot</th>
+            <th style="width:130px">Status</th>
+            <th style="width:230px">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="adminTbody">
+          {% for reg in registrations %}
+          <tr class="main-row"
+              data-id="{{ reg.id }}"
+              data-status="{{ reg.status }}"
+              data-plan="{{ reg.plan_type }}"
+              data-code="{{ reg.group_code }}"
+              data-names="{{ reg.participants | map(attribute='name')     | join(' ') }}"
+              data-emails="{{ reg.participants | map(attribute='email')   | join(' ') }}"
+              data-phones="{{ reg.participants | map(attribute='phone')   | join(' ') }}"
+              data-expanded="false">
+
+            <!-- chevron -->
+            <td class="cell-chevron">
+              <button type="button" class="chevron-btn"
+                      aria-label="Toggle details">
+                <svg viewBox="0 0 24 24" width="16" height="16"
+                     fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round"
+                     stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+            </td>
+
+            <!-- Group code -->
+            <td class="cell-medium cell-wrap">{{ reg.group_code }}</td>
+
+            <!-- Plan -->
+            <td class="cell-wrap">
+              {{ plans[reg.plan_type].label if reg.plan_type in plans else reg.plan_type }}
+            </td>
+
+            <!-- Amount -->
+            <td class="cell-wrap">₹{{ reg.amount }}</td>
+
+            <!-- Participants (avatar stack) -->
+            <td class="cell-contributors">
+              <div class="avatars">
+                {% for p in reg.participants %}
+                  <div class="avatar"
+                       tabindex="0"
+                       data-name="{{ p.name }}"
+                       data-email="{{ p.email }}"
+                       data-phone="{{ p.phone }}"
+                       data-role="{{ p.profession|title }}">
+                    <span class="avatar-fallback" style="display:flex">
+                      {{ p.name[0]|upper }}
+                    </span>
+                  </div>
+                {% endfor %}
+                <span class="avatar-count">{{ reg.participants|length }}</span>
+              </div>
+            </td>
+
+            <!-- UTR -->
+            <td class="cell-wrap">
+              {% if reg.utr %}
+                <code class="utr-code">{{ reg.utr }}</code>
+              {% else %}
+                <span class="muted">—</span>
+              {% endif %}
+            </td>
+
+            <!-- Screenshot -->
+            <td class="cell-wrap">
+              {% if reg.screenshot_path %}
+                <button type="button" class="btn btn-outline btn-sm view-shot"
+                        data-id="{{ reg.id }}"
+                        data-code="{{ reg.group_code }}">
+                  View
+                </button>
+              {% else %}
+                <span class="muted">—</span>
+              {% endif %}
+            </td>
+
+            <!-- Status -->
+            <td class="cell-wrap">
+              <span class="badge
+                {% if reg.status == 'approved' %}badge-active
+                {% elif reg.status == 'rejected' %}badge-inactive
+                {% elif reg.status == 'pending_approval' %}badge-in-progress
+                {% else %}badge-pending{% endif %}">
+                {{ reg.status.replace('_', ' ').title() }}
+              </span>
+            </td>
+
+            <!-- Actions -->
+            <td class="cell-wrap">
+              <div class="actions">
+                <button class="btn btn-outline btn-sm details-btn">
+                  Details
+                </button>
+                <button class="btn btn-approve approve-btn"
+                        data-id="{{ reg.id }}"
+                        {% if reg.status in ('approved','rejected','pending_payment') %}disabled{% endif %}>
+                  Approve
+                </button>
+                <button class="btn btn-reject reject-btn"
+                        data-id="{{ reg.id }}"
+                        {% if reg.status in ('approved','rejected','pending_payment') %}disabled{% endif %}>
+                  Reject
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- ============ EXPANDED DETAIL ROW ============ -->
+          <tr class="detail-row" data-for="{{ reg.id }}" style="display:none">
+            <td colspan="9">
+              <div class="detail-panel">
+
+                <div class="detail-head">
+                  <div>
+                    <span class="detail-title">Full participant details</span>
+                    <span class="detail-sub">
+                      {{ reg.participants|length }}
+                      participant{{ 's' if reg.participants|length != 1 else '' }}
+                      · submitted {{ reg.created_at[:10] if reg.created_at else '' }}
+                    </span>
+                  </div>
+                  <div class="detail-meta">
+                    <span class="meta-pill">
+                      <span class="meta-label">Group</span>
+                      <span class="meta-value">{{ reg.group_code }}</span>
+                    </span>
+                    <span class="meta-pill">
+                      <span class="meta-label">UTR</span>
+                      <span class="meta-value">{{ reg.utr or '—' }}</span>
+                    </span>
+                  </div>
+                </div>
+
+                {% if reg.notes %}
+                <div class="detail-notes">
+                  <strong>Admin notes:</strong> {{ reg.notes }}
+                </div>
+                {% endif %}
+
+                <div class="participant-grid">
+                  {% for p in reg.participants %}
+                  <div class="participant-detail">
+                    <div class="pd-header">
+                      <div class="pd-avatar">{{ p.name[0]|upper }}</div>
+                      <div class="pd-title">
+                        <div class="pd-name">{{ p.name }}</div>
+                        <span class="pd-role
+                          {% if p.profession == 'student' %}pd-role-student{% else %}pd-role-other{% endif %}">
+                          {{ p.profession|title }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <dl class="pd-fields">
+                      <div class="pd-field">
+                        <dt>Phone</dt>
+                        <dd><a href="tel:{{ p.phone }}">{{ p.phone }}</a></dd>
+                      </div>
+                      <div class="pd-field">
+                        <dt>Email</dt>
+                        <dd><a href="mailto:{{ p.email }}">{{ p.email }}</a></dd>
+                      </div>
+                      <div class="pd-field pd-field-wide">
+                        <dt>Address</dt>
+                        <dd>{{ p.address }}</dd>
+                      </div>
+                      <div class="pd-field">
+                        <dt>Profession</dt>
+                        <dd>{{ p.profession|title }}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                  {% endfor %}
+                </div>
+
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+
+          {% if not registrations %}
+          <tr>
+            <td colspan="9" class="cell-center">
+              No registrations yet.
+            </td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cell-center" id="emptyFilter" style="display:none">
+      No results match your filters.
+    </div>
+  </div>
+</section>
+
+<!-- ===================== SCREENSHOT MODAL ===================== -->
+<div class="modal-backdrop" id="shotModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Screenshot · <span id="modalCode"></span></h3>
+      <button class="modal-close" id="modalClose">×</button>
+    </div>
+    <div class="modal-body">
+      <img id="modalImg" src="" alt="Payment screenshot">
+    </div>
+  </div>
+</div>
+{% endblock %}

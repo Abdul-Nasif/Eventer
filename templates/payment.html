@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Payment — {{ reg.group_code }}{% endblock %}
+
+{% block content %}
+<section class="form-section">
+  <div class="form-container">
+    <header class="form-header {{ plan.theme }}">
+      <span class="card-label">Step 2 of 3 · Payment</span>
+      <h1>Complete your payment</h1>
+      <p class="form-sub">Group code: <strong>{{ reg.group_code }}</strong></p>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="flash flash-{{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <div class="payment-grid">
+      <div class="qr-box">
+        <div class="qr-frame">
+          <img src="{{ url_for('static', filename='img/qr.jpeg') }}"
+               alt="Scan to pay" />
+        </div>
+        <p class="qr-amount">Scan &amp; pay <strong>₹{{ reg.amount }}</strong></p>
+        <p class="qr-upi">UPI: {{ upi_id }}<br><span class="muted">{{ upi_name }}</span></p>
+      </div>
+
+      <form method="POST" enctype="multipart/form-data" class="payment-form">
+        <div class="field">
+          <label for="utr">UTR / Transaction reference</label>
+          <input id="utr" type="text" name="utr" required
+                 pattern="[A-Za-z0-9]{6,30}"
+                 placeholder="e.g., 4152XXXXXXXX">
+          <small class="hint">12-digit UTR from your UPI app</small>
+        </div>
+
+        <div class="field">
+          <label for="screenshot">Payment screenshot</label>
+          <input id="screenshot" type="file" name="screenshot"
+                 accept="image/png,image/jpeg,image/webp" required>
+          <small class="hint">PNG / JPG / WEBP · max 5 MB</small>
+        </div>
+
+        <div class="form-actions">
+          <a href="{{ url_for('index') }}" class="btn-ghost">← Cancel</a>
+          <button type="submit" class="btn-primary">Submit for Verification →</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "_svgs.html" import bg_svg %}
+{% block title %}Choose your plan{% endblock %}
+
+{% block content %}
+<section class="pricing-section">
+  <div class="pricing-intro">
+    <h1>Choose your plan</h1>
+    <p>Pick the option that fits you. You'll enter everyone's details next.</p>
+  </div>
+
+  <div class="pricing-grid">
+    {% for key, plan in plans.items() %}
+    <a href="{{ url_for('register', plan_type=key) }}"
+       class="pricing-card {{ plan.theme }}">
+      <div class="card-content">
+        <span class="card-label">{{ plan.label }}</span>
+        <span class="card-price">₹{{ plan.price }}/<br>Package</span>
+        <p class="card-description">{{ plan.description }}</p>
+      </div>
+      <span class="card-cta">{{ plan.cta }}</span>
+      {{ bg_svg(plan.bg) }}
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

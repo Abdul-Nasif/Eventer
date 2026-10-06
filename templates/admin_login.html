@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Admin login{% endblock %}
+
+{% block content %}
+<section class="form-section success-section">
+  <div class="form-container" style="max-width: 420px">
+    <header class="form-header card-indigo">
+      <span class="card-label">Admin</span>
+      <h1>Admin Login</h1>
+      <p class="form-sub">Enter the admin password to continue.</p>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="flash flash-{{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="POST" class="reg-form" autocomplete="off">
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" type="password" name="password" required
+               autofocus placeholder="••••••••">
+      </div>
+      <div class="form-actions">
+        <a href="{{ url_for('index') }}" class="btn-ghost">← Home</a>
+        <button type="submit" class="btn-primary">Sign in →</button>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

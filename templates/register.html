@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Register — {{ plan.label }}{% endblock %}
+
+{% block content %}
+<section class="form-section">
+  <div class="form-container">
+    <header class="form-header {{ plan.theme }}">
+      <!-- <span class="card-label">{{ plan.label }}</span> -->
+      <h1>Register — {{ plan.label }}</h1>
+      <p class="form-sub">₹{{ plan.price }} · {{ plan.count }}
+        participant{{ 's' if plan.count > 1 else '' }}</p>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="flash flash-{{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="POST" class="reg-form" autocomplete="off">
+      {% for i in range(plan.count) %}
+      <fieldset class="participant-card">
+        <legend>Participant {{ i + 1 }}
+          {% if plan.count > 1 %}of {{ plan.count }}{% endif %}</legend>
+
+        <div class="field">
+          <label for="p_name_{{ i }}">Full name</label>
+          <input id="p_name_{{ i }}" type="text" name="p_name_{{ i }}"
+                 maxlength="120" required placeholder="e.g., Aarav Sharma">
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label for="p_phone_{{ i }}">Phone number</label>
+            <input id="p_phone_{{ i }}" type="tel" name="p_phone_{{ i }}"
+                   pattern="[0-9+\-\s]{7,15}" required
+                   placeholder="+91 98xxxxxxxx">
+          </div>
+          <div class="field">
+            <label for="p_email_{{ i }}">Email</label>
+            <input id="p_email_{{ i }}" type="email" name="p_email_{{ i }}"
+                   required placeholder="you@example.com">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="p_address_{{ i }}">Address</label>
+          <textarea id="p_address_{{ i }}" name="p_address_{{ i }}"
+                    rows="2" required
+                    placeholder="House / Street / City / PIN"></textarea>
+        </div>
+
+        <div class="field">
+          <label>Profession</label>
+          <div class="radio-row">
+            <label class="radio-opt">
+              <input type="radio" name="p_profession_{{ i }}"
+                     value="student" required>
+              <span>Student</span>
+            </label>
+            <label class="radio-opt">
+              <input type="radio" name="p_profession_{{ i }}"
+                     value="other">
+              <span>Other</span>
+            </label>
+          </div>
+        </div>
+      </fieldset>
+      {% endfor %}
+
+      <div class="form-actions">
+        <a href="{{ url_for('index') }}" class="btn-ghost">← Back</a>
+        <button type="submit" class="btn-primary">Continue to Payment →</button>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}
