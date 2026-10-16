@@ -99,7 +99,55 @@ def register(plan_type):
         abort(404)
     return render_template("register.html", plan_type=plan_type, plan=plan)
 
+@app.route("/coupons")
+def coupons_page():
+    coupons = {
+        "sportify": {
+            "title":       "Sportify",
+            "value":       "₹499 coupon",
+            "desc_short":  "Gym • Badminton • Swimming Pool",
+            "desc":        "For Gym, Badminton & Swimming Pool.",
+            "terms":       ("Offer value shown: ₹499. Please confirm eligible services, "
+                            "membership or booking requirements, validity, and any "
+                            "exclusions directly with Sportify."),
+            "logo":        "sportify.jpg",
+        },
+        "swathi": {
+            "title":       "Swathi Makeover Artistry",
+            "value":       "₹299 OFF",
+            "desc_short":  "Minimum bill ₹999",
+            "desc":        "Enjoy ₹299 off on a qualifying bill.",
+            "terms":       ("Minimum bill: ₹999. Please confirm validity and any "
+                            "exclusions with Swathi Makeover Artistry."),
+            "logo":        "svi.jpg",
+        },
+        "infinity": {
+            "title":       "Infinity Vibe Men Store",
+            "value":       "₹299 OFF",
+            "desc_short":  "Minimum bill ₹1,799",
+            "desc":        "Enjoy ₹299 off on a qualifying purchase.",
+            "terms":       ("Minimum bill: ₹1,799. Please confirm validity and any "
+                            "exclusions with Infinity Vibe Men Store."),
+            "logo":        "infinity.jpg",
+        },
+    }
 
+    # Build a JSON copy for the modal JS, injecting url_for() so image paths
+    # always resolve correctly (works behind subpaths / blueprints too).
+    import json
+    coupons_json = {
+        k: {
+            **v,
+            "logo_url": url_for("static", filename=f"img/{v['logo']}"),
+        }
+        for k, v in coupons.items()
+    }
+
+    return render_template(
+        "coupons.html",
+        coupons=coupons,
+        coupons_json=json.dumps(coupons_json),
+    )
 @app.route("/register/<plan_type>", methods=["POST"])
 def register_post(plan_type):
     plan = PLANS.get(plan_type)
