@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#160c2c">
+<title>Dandiya Utsav 2026 | Digital Coupons</title>
+<link rel="icon" type="image/png"
+      href="{{ url_for('static', filename='img/favicon.png') }}">
+<style>
+:root{--bg:#10091f;--panel:#21143a;--gold:#ffd66b;--pink:#ff4f9a;--cream:#fff8e8;--muted:#d4c8e8}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--cream);background:radial-gradient(ellipse at top,#46215e 0%,var(--bg) 58%);min-height:100vh}
+main{width:min(720px,100%);margin:auto;padding:22px 16px 40px}
+.hero{text-align:center;padding:10px 8px 22px}
+.brandlogo{width:min(180px,46vw);height:120px;object-fit:contain;display:block;margin:0 auto 14px;border-radius:14px}
+.kicker{color:var(--gold);font-weight:800;letter-spacing:.16em;text-transform:uppercase;font-size:.76rem}
+h1{font-size:clamp(2rem,8vw,3.4rem);line-height:1.02;margin:10px 0;color:var(--gold);text-shadow:0 3px 0 #6b2d69}
+.subtitle{color:var(--muted);margin:12px auto 0;max-width:480px}
+.total{display:inline-block;margin-top:18px;border:1px solid #ffd66b88;border-radius:999px;padding:9px 16px;color:var(--gold);font-weight:800;background:#160c2c99}
+.cards{display:grid;gap:14px;margin-top:12px}
+.card{display:block;width:100%;text-align:left;color:inherit;background:linear-gradient(130deg,#2c1b49,#1b102f);border:1px solid #ffffff24;border-radius:20px;padding:17px;cursor:pointer;box-shadow:0 12px 30px #0003;transition:transform .15s,border-color .15s}
+.card:hover,.card:focus-visible{transform:translateY(-2px);border-color:var(--gold);outline:none}
+.cardtop{display:flex;align-items:center;gap:14px}
+.logo-wrap{width:76px;height:76px;flex-shrink:0;background:#fff;border-radius:13px;display:grid;place-items:center;padding:5px;overflow:hidden}
+.logo-wrap img{width:100%;height:100%;object-fit:contain}
+.card h2{font-size:1.05rem;margin:0 0 5px}
+.value{font-size:1.5rem;color:var(--gold);font-weight:900;line-height:1.2}
+.desc{color:var(--muted);font-size:.9rem;margin-top:5px}
+.tap{margin-left:auto;color:var(--gold);font-size:1.5rem;padding-left:4px}
+.note{font-size:.83rem;line-height:1.5;color:var(--muted);text-align:center;margin:22px 8px}
+footer{text-align:center;color:#b9a9d0;font-size:.78rem;border-top:1px solid #ffffff1a;padding-top:18px;margin-top:24px}
+dialog{width:min(480px,calc(100% - 28px));border:1px solid #ffd66b88;border-radius:22px;padding:0;color:var(--cream);background:#1b102f;box-shadow:0 20px 70px #0009}
+dialog::backdrop{background:#080411cc;backdrop-filter:blur(4px)}
+.modal{padding:24px}
+.modal-logo{width:120px;height:90px;object-fit:contain;background:#fff;border-radius:14px;padding:6px}
+.modal h2{margin:12px 0 8px;color:var(--gold);font-size:1.5rem}
+.coupon-value{font-size:2rem;font-weight:900;color:var(--gold);margin:12px 0}
+.rule{background:#ffffff0c;border:1px dashed #ffd66b88;border-radius:13px;padding:13px;margin:14px 0;line-height:1.5}
+.btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.btn{border:0;border-radius:999px;padding:12px 17px;font-weight:800;cursor:pointer}
+.primary{background:var(--gold);color:#21143a}
+.secondary{background:#ffffff14;color:var(--cream);border:1px solid #ffffff30}
+.small{font-size:.78rem;color:var(--muted);line-height:1.5}
+</style>
+</head>
+<body>
+<main>
+
+<header class="hero">
+  <img class="brandlogo"
+       src="{{ url_for('static', filename='img/sv_co.jpg') }}"
+       alt="Sv and co">
+  <div class="kicker">SV&amp;Co Presents</div>
+  <h1>DANDIYA<br>UTSAV 2026</h1>
+  <p class="subtitle">Your exclusive partner coupons are here! Tap any coupon below to view its offer and redemption conditions.</p>
+  <div class="total">🎁 {{ coupons|length }} COUPONS • OFFERS WORTH ₹1,100*</div>
+</header>
+
+<section class="cards" aria-label="Available coupons">
+  {% for key, c in coupons.items() %}
+  <button class="card" data-coupon="{{ key }}">
+    <div class="cardtop">
+      <div class="logo-wrap">
+        <img src="{{ url_for('static', filename='img/' ~ c.logo) }}"
+             alt="{{ c.title }} logo">
+      </div>
+      <div>
+        <h2>{{ c.title }}</h2>
+        <div class="value">{{ c.value }}</div>
+        <div class="desc">{{ c.desc_short }}</div>
+      </div>
+      <span class="tap">›</span>
+    </div>
+  </button>
+  {% endfor %}
+</section>
+
+<p class="note">Tap a coupon to view its individual details. Please confirm any additional eligibility, expiry, and redemption requirements with the respective business before use.</p>
+
+<footer>
+  Thank you for celebrating with us! ❤️<br>
+  <strong>Team Dandiya Utsav 2026</strong>
+</footer>
+
+</main>
+
+<dialog id="couponDialog" aria-labelledby="modalTitle">
+  <div class="modal">
+    <img class="modal-logo" id="modalLogo" src="" alt="Coupon business logo">
+    <h2 id="modalTitle">Coupon</h2>
+    <div class="coupon-value" id="modalValue"></div>
+    <p id="modalDesc"></p>
+    <div class="rule">
+      <strong>Redemption conditions</strong><br>
+      <span id="modalTerms"></span>
+    </div>
+    <p class="small">Show this coupon page to the respective business when redeeming. The business should confirm validity and mark the coupon as used if required.</p>
+    <div class="btns">
+      <button class="btn primary" id="shareBtn" type="button">Share coupon</button>
+      <button class="btn secondary" id="closeBtn" type="button">Close</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  // Injected from Flask — one place to edit coupons (app.py)
+  const coupons = {{ coupons_json|safe }};
+
+  const dialog = document.getElementById("couponDialog");
+  let active = null;
+
+  document.querySelectorAll("[data-coupon]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      active = coupons[btn.dataset.coupon];
+      if (!active) return;
+      document.getElementById("modalLogo").src   = active.logo_url;
+      document.getElementById("modalLogo").alt   = active.title + " logo";
+      document.getElementById("modalTitle").textContent = active.title;
+      document.getElementById("modalValue").textContent = active.value;
+      document.getElementById("modalDesc").textContent  = active.desc;
+      document.getElementById("modalTerms").textContent = active.terms;
+      dialog.showModal();
+    });
+  });
+
+  document.getElementById("closeBtn").addEventListener("click", () => dialog.close());
+
+  document.getElementById("shareBtn").addEventListener("click", async () => {
+    if (!active) return;
+    const text =
+      `Dandiya Utsav 2026 coupon\n${active.title}\n${active.value}\n` +
+      `${active.desc}\nConditions: ${active.terms}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: active.title, text }); } catch (e) {}
+    } else if (navigator.clipboard) {
+      try { await navigator.clipboard.writeText(text);
+            alert("Coupon details copied. You can paste and share them."); }
+      catch (e) { alert(text); }
+    } else { alert(text); }
+  });
+
+  dialog.addEventListener("click", e => { if (e.target === dialog) dialog.close(); });
+</script>
+</body>
+</html>
